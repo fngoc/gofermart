@@ -70,11 +70,34 @@ func IsUserCreated(userName string) bool {
 	return isCreated
 }
 
-func CreateUser(userName string, passwordHash string, token string) error {
+func IsUserAuthenticated(userName, passwordHash string) bool {
+	var IsAuthenticated bool
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
+	row := store.QueryRowContext(ctx,
+		`SELECT EXISTS (SELECT 1 FROM users WHERE user_name = $1 AND password = $2)`, userName, passwordHash)
+	err := row.Scan(&IsAuthenticated)
+	if err != nil {
+		return false
+	}
+	return IsAuthenticated
+}
+
+func CreateUser(userName, passwordHash, token string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	_, err := store.ExecContext(ctx, `INSERT INTO users (user_name, password, token) VALUES ($1, $2, $3)`,
 		userName, passwordHash, token,
 	)
+	return err
+}
+
+func SetNewTokenByUser(userName, token string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := store.ExecContext(ctx, `UPDATE users SET token = $1 WHERE user_name = $2;`, token, userName)
 	return err
 }

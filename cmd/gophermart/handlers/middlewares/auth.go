@@ -18,7 +18,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		cookie, err := r.Cookie(CookieName)
 
 		if err != nil {
-			tokenString, err = jwt.BuildJWTString("")
+			tokenString, err = jwt.BuildJWTByUserName("")
 
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)

@@ -20,8 +20,8 @@ const (
 	secretKey = "super-secret-key"
 )
 
-// BuildJWTString создаёт токен и возвращает его в виде строки.
-func BuildJWTString(userName string) (string, error) {
+// BuildJWTByUserName создаёт токен и возвращает его в виде строки.
+func BuildJWTByUserName(userName string) (string, error) {
 	// создаём новый токен с алгоритмом подписи HS256 и утверждениями — Claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{

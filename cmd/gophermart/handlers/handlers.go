@@ -9,55 +9,107 @@ import (
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"net/http"
+	"strings"
 )
 
-// RegisterWebhook обработчик регистрации POST HTTP-запроса
-func RegisterWebhook(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusBadRequest)
-		logger.Log.Info("Register only accepts POST requests")
+// RegisterWebhook обработчик регистрации, POST HTTP-запрос
+func RegisterWebhook(writer http.ResponseWriter, request *http.Request) {
+	body, err := authCheckRequest(request)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		logger.Log.Info(fmt.Sprintf("Registered check request error: %s", err))
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	var request models.RegisterRequest
-	if err := decoder.Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		logger.Log.Info(fmt.Sprintf("Registered user error: %s", err))
-		return
-	}
-
-	if request.Login == "" || request.Password == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		logger.Log.Info("Empty login or password")
-		return
-	}
-
-	if storage.IsUserCreated(request.Login) {
-		w.WriteHeader(http.StatusConflict)
+	if storage.IsUserCreated(body.Login) {
+		writer.WriteHeader(http.StatusConflict)
 		logger.Log.Info("User already exists")
 		return
 	}
 
-	passwordHash, err := hash.HashingPassword(request.Password)
+	passwordHash, err := hash.HashingPassword(body.Password)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Log.Info(fmt.Sprintf("Registered user error: %s", err))
+		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Log.Warn(fmt.Sprintf("Registered user error: %s", err))
 		return
 	}
 
-	jwtToken, err := jwt.BuildJWTString(request.Login)
+	jwtToken, err := jwt.BuildJWTByUserName(body.Login)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Log.Info(fmt.Sprintf("Registered user error: %s", err))
+		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Log.Warn(fmt.Sprintf("Registered user error: %s", err))
 		return
 	}
-	if err := storage.CreateUser(request.Login, passwordHash, jwtToken); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Log.Info(fmt.Sprintf("Registered user error: %s", err))
+	if err := storage.CreateUser(body.Login, passwordHash, jwtToken); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Log.Warn(fmt.Sprintf("Registered user error: %s", err))
 		return
 	}
-	logger.Log.Info("Registered user successfully")
-	w.Header().Set("Authorization", jwtToken)
-	w.WriteHeader(http.StatusOK)
+
+	logger.Log.Info(fmt.Sprintf("Registered user '%s' successfully", body.Login))
+	writer.Header().Set("Authorization", jwtToken)
+	writer.WriteHeader(http.StatusOK)
+}
+
+// AuntificationWebhook обработчик аунтификации, POST HTTP-запрос
+func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
+	body, err := authCheckRequest(request)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		logger.Log.Info(fmt.Sprintf("Auntification check request error: %s", err))
+		return
+	}
+
+	passwordHash, err := hash.HashingPassword(body.Password)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Log.Warn(fmt.Sprintf("Auntification user error: %s", err))
+		return
+	}
+
+	if !storage.IsUserAuthenticated(body.Login, passwordHash) {
+		writer.WriteHeader(http.StatusUnauthorized)
+		logger.Log.Info("Bad username or password")
+		return
+	}
+
+	jwtToken, err := jwt.BuildJWTByUserName(body.Login)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Log.Warn(fmt.Sprintf("Auntification user error: %s", err))
+		return
+	}
+
+	if err := storage.SetNewTokenByUser(body.Login, jwtToken); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		logger.Log.Warn(fmt.Sprintf("Auntification user error: %s", err))
+		return
+	}
+
+	logger.Log.Info(fmt.Sprintf("Login user '%s' successfully", body.Login))
+	writer.Header().Set("Authorization", jwtToken)
+	writer.WriteHeader(http.StatusOK)
+}
+
+func authCheckRequest(request *http.Request) (models.AuthRequest, error) {
+	if request.Method != http.MethodPost {
+		return models.AuthRequest{}, fmt.Errorf("method only accepts POST requests")
+	}
+
+	allowedApplicationJSON := strings.Contains(request.Header.Get("Content-Type"), "application/json")
+	if !allowedApplicationJSON {
+		return models.AuthRequest{}, fmt.Errorf("need header: 'Content-Type: application/json'")
+	}
+
+	decoder := json.NewDecoder(request.Body)
+	var body models.AuthRequest
+	if err := decoder.Decode(&body); err != nil {
+		return models.AuthRequest{}, fmt.Errorf(fmt.Sprintf("decode body error: %s", err))
+	}
+
+	if body.Login == "" || body.Password == "" {
+		return models.AuthRequest{}, fmt.Errorf("empty login or password")
+	}
+
+	return body, nil
 }

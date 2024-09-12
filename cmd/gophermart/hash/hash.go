@@ -1,12 +1,12 @@
 package hash
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+)
 
-// HashingPassword функция для хэширования строки (пароля)
+// HashingPassword функция для хэширования строки
 func HashingPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
+	hash := sha256.Sum256([]byte(password))
+	return hex.EncodeToString(hash[:]), nil
 }
