@@ -1,7 +1,18 @@
 package constants
 
-// ContextKey тип для ключа контекста
-type ContextKey string
+// contextKey тип для ключа контекста
+type contextKey string
 
-// UserIDKey ключ для контекста
-const UserIDKey ContextKey = "userID"
+// orderStatus статус заказа
+type orderStatus string
+
+const (
+	// Статусы заказа
+	New        orderStatus = "NEW"
+	Processing orderStatus = "PROCESSING"
+	Invalid    orderStatus = "INVALID"
+	Processed  orderStatus = "PROCESSED"
+
+	// UserNameKey ключ для контекста
+	UserNameKey contextKey = "userName"
+)
