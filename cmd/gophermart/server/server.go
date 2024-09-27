@@ -15,9 +15,13 @@ func Run() error {
 
 	r := chi.NewRouter()
 
-	r.Route("/", func(r chi.Router) {
-		r.Post("/api/user/register", logger.RequestLogger(middlewares.GzipMiddleware(handlers.RegisterWebhook)))
-		r.Post("/api/user/login", logger.RequestLogger(middlewares.GzipMiddleware(handlers.AuntificationWebhook)))
+	r.Route("/api/user", func(r chi.Router) {
+		//auth
+		r.Post("/register", logger.RequestLogger(middlewares.GzipMiddleware(handlers.RegisterWebhook)))
+		r.Post("/login", logger.RequestLogger(middlewares.GzipMiddleware(handlers.AuntificationWebhook)))
+
+		//order
+		r.Post("/orders", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.LoadOrderWebhook))))
 	})
 
 	return http.ListenAndServe(configs.Flags.ServerAddress, r)

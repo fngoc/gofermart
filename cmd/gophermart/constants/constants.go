@@ -1,7 +1,7 @@
 package constants
 
-// ContextKey тип для ключа контекста
-type ContextKey string
+// contextKey тип для ключа контекста
+type contextKey string
 
-// UserIDKey ключ для контекста
-const UserIDKey ContextKey = "userID"
+// UserNameKey ключ для контекста
+const UserNameKey contextKey = "userName"

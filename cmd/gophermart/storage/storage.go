@@ -26,10 +26,16 @@ func InitializeDB(dbConf string) error {
 }
 
 func createTables(db *sql.DB) error {
-	createDataTableQuery := ``
+	createOrderTableQuery := `
+	CREATE TABLE IF NOT EXISTS orders (
+		id SERIAL PRIMARY KEY,
+		order_id BIGINT NOT NULL UNIQUE,
+		user_name VARCHAR NOT NULL UNIQUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	)`
 	createUserTableQuery := `
 	CREATE TABLE IF NOT EXISTS users (
-		uuid SERIAL PRIMARY KEY,
+		id SERIAL PRIMARY KEY,
 		user_name VARCHAR NOT NULL UNIQUE,
 		password TEXT NOT NULL,
 		token TEXT NOT NULL,
@@ -40,7 +46,7 @@ func createTables(db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, errData := db.ExecContext(ctx, createDataTableQuery)
+	_, errData := db.ExecContext(ctx, createOrderTableQuery)
 	if errData != nil {
 		return errData
 	}
@@ -100,4 +106,29 @@ func SetNewTokenByUser(userName, token string) error {
 
 	_, err := store.ExecContext(ctx, `UPDATE users SET token = $1 WHERE user_name = $2;`, token, userName)
 	return err
+}
+
+func GetUserNameByOrderId(orderId int64) string {
+	var userName string
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	row := store.QueryRowContext(ctx,
+		`SELECT user_name FROM orders WHERE order_id = $1`, orderId)
+	err := row.Scan(&userName)
+	if err != nil {
+		return ""
+	}
+	return userName
+}
+
+func CreateOrder(userName string, orderID int64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := store.ExecContext(ctx, `INSERT INTO orders (user_name, order_id) VALUES ($1, $2)`, userName, orderID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

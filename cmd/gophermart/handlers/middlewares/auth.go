@@ -8,40 +8,35 @@ import (
 	"net/http"
 )
 
-const CookieName = "token"
+// cookieName наименование куки
+const cookieName = "token"
 
 // AuthMiddleware — middleware для аунтификации HTTP-запросов.
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var tokenString string
+		var userName string
+		cookie, _ := r.Cookie(cookieName)
+		token := r.Header.Get("Authorization")
 
-		cookie, err := r.Cookie(CookieName)
-
-		if err != nil {
-			tokenString, err = jwt.BuildJWTByUserName("")
-
+		if token == "" && cookie == nil {
+			logger.Log.Warn("No auth cookie and header found")
+			w.WriteHeader(http.StatusUnauthorized)
+			next.ServeHTTP(w, r)
+			return
+		} else {
+			if cookie != nil {
+				token = cookie.Value
+			}
+			userNameString, err := jwt.GetUserNameByToken(token)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHeader(http.StatusBadRequest)
+				logger.Log.Warn(err.Error())
 				return
 			}
-
-			http.SetCookie(w, &http.Cookie{
-				Name:  CookieName,
-				Value: tokenString,
-			})
-		} else {
-			tokenString = cookie.Value
+			userName = userNameString
 		}
 
-		userID, err := jwt.GetUserID(tokenString)
-
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			logger.Log.Warn(err.Error())
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), constants.UserIDKey, userID)
+		ctx := context.WithValue(r.Context(), constants.UserNameKey, userName)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
