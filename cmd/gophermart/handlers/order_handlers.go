@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
@@ -58,6 +59,38 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodGet {
+		writer.WriteHeader(http.StatusBadRequest)
+		logger.Log.Info("Method only accepts GET requests")
+		return
+	}
+
+	userName := request.Context().Value(constants.UserNameKey).(string)
+	orders, err := storage.GetAllOrdersByUserName(userName)
+	if err != nil {
+		logger.Log.Info(fmt.Sprintf("Get all orders error: %s", err))
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(orders) == 0 {
+		writer.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	buf := bytes.Buffer{}
+	encode := json.NewEncoder(&buf)
+	if err := encode.Encode(orders); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	_, _ = writer.Write(buf.Bytes())
 }
 
 // checkLunAlg проверяет корректность номера по алгоритму Луна

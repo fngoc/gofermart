@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	handler_models "github.com/fngoc/gofermart/cmd/gophermart/handlers/handler_models"
 	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/models"
 	"github.com/fngoc/gofermart/cmd/gophermart/hash"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
@@ -91,24 +91,24 @@ func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-func authCheckRequest(request *http.Request) (models.AuthRequest, error) {
+func authCheckRequest(request *http.Request) (handler_models.AuthRequest, error) {
 	if request.Method != http.MethodPost {
-		return models.AuthRequest{}, fmt.Errorf("method only accepts POST requests")
+		return handler_models.AuthRequest{}, fmt.Errorf("method only accepts POST requests")
 	}
 
 	allowedApplicationJSON := strings.Contains(request.Header.Get("Content-Type"), "application/json")
 	if !allowedApplicationJSON {
-		return models.AuthRequest{}, fmt.Errorf("need header: 'Content-Type: application/json'")
+		return handler_models.AuthRequest{}, fmt.Errorf("need header: 'Content-Type: application/json'")
 	}
 
 	decoder := json.NewDecoder(request.Body)
-	var body models.AuthRequest
+	var body handler_models.AuthRequest
 	if err := decoder.Decode(&body); err != nil {
-		return models.AuthRequest{}, fmt.Errorf(fmt.Sprintf("decode body error: %s", err))
+		return handler_models.AuthRequest{}, fmt.Errorf(fmt.Sprintf("decode body error: %s", err))
 	}
 
 	if body.Login == "" || body.Password == "" {
-		return models.AuthRequest{}, fmt.Errorf("empty login or password")
+		return handler_models.AuthRequest{}, fmt.Errorf("empty login or password")
 	}
 
 	return body, nil

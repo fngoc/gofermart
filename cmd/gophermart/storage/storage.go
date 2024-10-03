@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
+	"github.com/fngoc/gofermart/cmd/gophermart/storage/storage_models"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"time"
 )
@@ -30,7 +31,9 @@ func createTables(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS orders (
 		id SERIAL PRIMARY KEY,
 		order_id BIGINT NOT NULL UNIQUE,
-		user_name VARCHAR NOT NULL UNIQUE,
+		user_name VARCHAR NOT NULL,
+		accrual INTEGER,
+		status VARCHAR NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	)`
 	createUserTableQuery := `
@@ -67,7 +70,8 @@ func IsUserCreated(userName string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	row := store.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM users WHERE user_name = $1)`, userName)
+	row := store.QueryRowContext(ctx,
+		`SELECT EXISTS (SELECT 1 FROM users WHERE user_name = $1)`, userName)
 	err := row.Scan(&isCreated)
 	if err != nil {
 		logger.Log.Error(err.Error())
@@ -94,7 +98,8 @@ func CreateUser(userName, passwordHash, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx, `INSERT INTO users (user_name, password, token) VALUES ($1, $2, $3)`,
+	_, err := store.ExecContext(ctx,
+		`INSERT INTO users (user_name, password, token) VALUES ($1, $2, $3)`,
 		userName, passwordHash, token,
 	)
 	return err
@@ -104,7 +109,8 @@ func SetNewTokenByUser(userName, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx, `UPDATE users SET token = $1 WHERE user_name = $2;`, token, userName)
+	_, err := store.ExecContext(ctx,
+		`UPDATE users SET token = $1 WHERE user_name = $2;`, token, userName)
 	return err
 }
 
@@ -126,9 +132,63 @@ func CreateOrder(userName string, orderID int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx, `INSERT INTO orders (user_name, order_id) VALUES ($1, $2)`, userName, orderID)
+	_, err := store.ExecContext(ctx,
+		`INSERT INTO orders (user_name, order_id, status) VALUES ($1, $2, $3)`, userName, orderID, "NEW")
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func GetAllOrdersByUserName(userName string) ([]storage_models.Order, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := store.QueryContext(ctx,
+		`SELECT order_id, status, accrual, created_at FROM orders WHERE user_name = $1 ORDER BY created_at`, userName)
+	if err != nil {
+		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	var result []storage_models.Order
+	for rows.Next() {
+		var orderID string
+		var status string
+		var accrual sql.NullInt64
+		var createdAt string
+
+		if err := rows.Scan(&orderID, &status, &accrual, &createdAt); err != nil {
+			return nil, err
+		}
+
+		result = append(result, storage_models.Order{
+			Number:     orderID,
+			Status:     status,
+			Accrual:    getValueByNullInt64(accrual),
+			UploadedAt: convertTime(createdAt),
+		})
+	}
+	return result, nil
+}
+
+func getValueByNullInt64(value sql.NullInt64) int {
+	if value.Valid {
+		return int(value.Int64)
+	}
+	return 0
+}
+
+func convertTime(t string) string {
+	parsedTime, err := time.Parse(time.RFC3339Nano, t)
+	if err != nil {
+		logger.Log.Error(err.Error())
+		return t
+	}
+	location := time.FixedZone("UTC+3", 3*60*60)
+	timeInZone := parsedTime.In(location)
+	formattedTime := timeInZone.Format(time.RFC3339)
+	return formattedTime
 }

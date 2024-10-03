@@ -29,8 +29,8 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			}
 			userNameString, err := jwt.GetUserNameByToken(token)
 			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				logger.Log.Warn(err.Error())
+				w.WriteHeader(http.StatusUnauthorized)
+				logger.Log.Info(err.Error())
 				return
 			}
 			userName = userNameString

@@ -22,6 +22,7 @@ func Run() error {
 
 		//order
 		r.Post("/orders", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.LoadOrderWebhook))))
+		r.Get("/orders", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.ListOrdersWebhook))))
 	})
 
 	return http.ListenAndServe(configs.Flags.ServerAddress, r)
