@@ -83,7 +83,7 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	orders, err := storage.GetAllOrdersByUserName(userId)
+	orders, err := storage.GetAllOrdersByUserId(userId)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Get all orders error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)

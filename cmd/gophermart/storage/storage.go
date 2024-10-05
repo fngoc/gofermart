@@ -8,6 +8,7 @@ import (
 	"github.com/fngoc/gofermart/cmd/gophermart/storage/storage_models"
 	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"math"
 	"time"
 )
 
@@ -51,12 +52,11 @@ func createTables(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS balances (
 	   id SERIAL PRIMARY KEY,
 	   user_id INTEGER NOT NULL UNIQUE,
-	   balance INTEGER,
+	   current_balance DOUBLE PRECISION,
+	   withdrawn INTEGER,
 	   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	   FOREIGN KEY (user_id) REFERENCES users(id)
 	)`
-
-	createIndexQuery := ``
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -72,10 +72,6 @@ func createTables(db *sql.DB) error {
 	_, errBalance := db.ExecContext(ctx, createBalancesTableQuery)
 	if errBalance != nil {
 		return errBalance
-	}
-	_, errIdx := db.ExecContext(ctx, createIndexQuery)
-	if errIdx != nil {
-		return errIdx
 	}
 	logger.Log.Info("Database table created")
 	return nil
@@ -178,7 +174,7 @@ func CreateOrder(userID int, orderID int64) error {
 	return nil
 }
 
-func GetAllOrdersByUserName(userID int) ([]storage_models.Order, error) {
+func GetAllOrdersByUserId(userID int) ([]storage_models.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -211,4 +207,66 @@ func GetAllOrdersByUserName(userID int) ([]storage_models.Order, error) {
 		})
 	}
 	return result, nil
+}
+
+func GetBalanceByUserId(userID int) (storage_models.Balance, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := store.QueryContext(ctx,
+		`SELECT current_balance, withdrawn FROM balances
+                WHERE user_id = $1`, userID)
+	if err != nil {
+		return storage_models.Balance{}, err
+	}
+	if rows.Err() != nil {
+		return storage_models.Balance{}, rows.Err()
+	}
+
+	var result storage_models.Balance
+	for rows.Next() {
+		var currentBalance float64
+		var withdrawn int
+
+		if err := rows.Scan(&currentBalance, &withdrawn); err != nil {
+			return storage_models.Balance{}, err
+		}
+		result = storage_models.Balance{
+			Current:   math.Round(currentBalance*10) / 10, //преобразование ответа с 1 знаком после запятой
+			Withdrawn: withdrawn,
+		}
+	}
+
+	return result, nil
+}
+
+func IsUserHasOrderId(userID, orderID int) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var exists int
+	err := store.QueryRowContext(ctx,
+		`SELECT 1 FROM orders
+         		WHERE order_id = $1 AND user_id = $2`, orderID, userID).Scan(&exists)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func DeductBalance(userID int, amountToDeduct float64) (float64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var newBalance float64
+	err := store.QueryRowContext(ctx,
+		`UPDATE balances
+				SET current_balance = current_balance - $1, withdrawn = withdrawn + $1
+				WHERE user_id = $2 AND current_balance >= $1 
+				RETURNING current_balance
+				`, amountToDeduct, userID).Scan(&newBalance)
+	if err != nil {
+		return 0, err
+	}
+	return newBalance, nil
 }
