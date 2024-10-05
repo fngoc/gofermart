@@ -7,10 +7,10 @@ import (
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
+	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	"net/http"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
@@ -35,7 +35,7 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if !checkLunAlg(strconv.FormatInt(orderId, 10)) {
+	if !utils.CheckLunAlg(strconv.FormatInt(orderId, 10)) {
 		logger.Log.Info("False check Lun Algorithm")
 		writer.WriteHeader(http.StatusUnprocessableEntity)
 		return
@@ -53,7 +53,14 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	if err := storage.CreateOrder(userNameByToken, orderId); err != nil {
+	userId, err := storage.GetUserIdByName(userNameByToken)
+	if err != nil {
+		logger.Log.Info(fmt.Sprintf("Create order error: %s", err))
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := storage.CreateOrder(userId, orderId); err != nil {
 		logger.Log.Info(fmt.Sprintf("Create order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -68,8 +75,15 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userName := request.Context().Value(constants.UserNameKey).(string)
-	orders, err := storage.GetAllOrdersByUserName(userName)
+	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
+	userId, err := storage.GetUserIdByName(userNameByToken)
+	if err != nil {
+		logger.Log.Info(fmt.Sprintf("List order error: %s", err))
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	orders, err := storage.GetAllOrdersByUserName(userId)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Get all orders error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -91,43 +105,4 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_, _ = writer.Write(buf.Bytes())
-}
-
-// checkLunAlg проверяет корректность номера по алгоритму Луна
-func checkLunAlg(number string) bool {
-	var sum int
-	// Маркер для удвоения каждой второй цифры
-	double := false
-
-	// Идем с конца строки к началу
-	for i := len(number) - 1; i >= 0; i-- {
-		// Получаем текущий символ
-		r := rune(number[i])
-
-		// Пропускаем нечисловые символы
-		if !unicode.IsDigit(r) {
-			continue
-		}
-
-		// Преобразуем символ в целое число
-		digit := int(r - '0')
-
-		// Если нужно удвоить каждую вторую цифру
-		if double {
-			digit *= 2
-			// Если результат больше 9, вычитаем 9
-			if digit > 9 {
-				digit -= 9
-			}
-		}
-
-		// Добавляем к общей сумме
-		sum += digit
-
-		// Меняем флаг удвоения для следующей цифры
-		double = !double
-	}
-
-	// Проверяем, делится ли сумма на 10
-	return sum%10 == 0
 }
