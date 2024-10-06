@@ -97,7 +97,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	_, err = storage.DeductBalance(userID, body.Sum)
+	_, err = storage.DeductBalance(userID, orderID, body.Sum)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Deduct balance error: %s", err))
 		writer.WriteHeader(http.StatusPaymentRequired)

@@ -27,6 +27,9 @@ func Run() error {
 		//balance
 		r.Get("/balance", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.GetBalanceWebhook))))
 		r.Post("/balance/withdraw", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.PostWithdrawBalanceWebhook))))
+
+		//withdrawals
+		r.Get("/withdraw", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.ListWithdrawBalanceWebhook))))
 	})
 
 	return http.ListenAndServe(configs.Flags.ServerAddress, r)

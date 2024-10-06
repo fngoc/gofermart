@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage/storage_models"
@@ -58,6 +59,16 @@ func createTables(db *sql.DB) error {
 	   FOREIGN KEY (user_id) REFERENCES users(id)
 	)`
 
+	createTransactionHistoryTableQuery := `
+	CREATE TABLE IF NOT EXISTS transaction_history (
+	   id SERIAL PRIMARY KEY,
+	   user_id INTEGER NOT NULL,
+	   order_number BIGINT NOT NULL,
+	   transaction_sum DOUBLE PRECISION,
+	   processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	   FOREIGN KEY (user_id) REFERENCES users(id)
+	)`
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -72,6 +83,10 @@ func createTables(db *sql.DB) error {
 	_, errBalance := db.ExecContext(ctx, createBalancesTableQuery)
 	if errBalance != nil {
 		return errBalance
+	}
+	_, errTransaction := db.ExecContext(ctx, createTransactionHistoryTableQuery)
+	if errTransaction != nil {
+		return errTransaction
 	}
 	logger.Log.Info("Database table created")
 	return nil
@@ -180,7 +195,7 @@ func GetAllOrdersByUserId(userID int) ([]storage_models.Order, error) {
 
 	rows, err := store.QueryContext(ctx,
 		`SELECT order_id, status, accrual, created_at FROM orders
-                WHERE user_id = $1 ORDER BY created_at`, userID)
+                WHERE user_id = $1 ORDER BY created_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,19 +269,71 @@ func IsUserHasOrderId(userID, orderID int) bool {
 	return true
 }
 
-func DeductBalance(userID int, amountToDeduct float64) (float64, error) {
+func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	tx, err := store.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
 	var newBalance float64
-	err := store.QueryRowContext(ctx,
+	err = tx.QueryRowContext(ctx,
 		`UPDATE balances
 				SET current_balance = current_balance - $1, withdrawn = withdrawn + $1
-				WHERE user_id = $2 AND current_balance >= $1 
+				WHERE user_id = $2 AND current_balance >= $1
 				RETURNING current_balance
 				`, amountToDeduct, userID).Scan(&newBalance)
 	if err != nil {
-		return 0, err
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("failed to update balance: %w", err)
 	}
+
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO transaction_history (user_id, order_number, transaction_sum) VALUES ($1, $2, $3)`,
+		userID, orderID, amountToDeduct)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("failed to insert transaction history: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	return newBalance, nil
+}
+
+func GetAllTransactionByUserId(userID int) ([]storage_models.Transaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := store.QueryContext(ctx,
+		`SELECT order_number, transaction_sum, processed_at FROM transaction_history
+                WHERE user_id = $1 ORDER BY processed_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	var result []storage_models.Transaction
+	for rows.Next() {
+		var orderNumber string
+		var transactionSum float64
+		var processedAt string
+
+		if err := rows.Scan(&orderNumber, &transactionSum, &processedAt); err != nil {
+			return nil, err
+		}
+
+		result = append(result, storage_models.Transaction{
+			OrderNumber: orderNumber,
+			Sum:         transactionSum,
+			ProcessedAt: utils.ConvertTime(processedAt),
+		})
+	}
+	return result, nil
 }
