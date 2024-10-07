@@ -9,7 +9,7 @@ import (
 	"github.com/fngoc/gofermart/cmd/gophermart/storage/storage_models"
 	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"math"
+	"github.com/shopspring/decimal"
 	"time"
 )
 
@@ -44,7 +44,7 @@ func createTables(db *sql.DB) error {
 		id SERIAL PRIMARY KEY,
 		order_id BIGINT NOT NULL UNIQUE,
 		user_id INTEGER NOT NULL,
-		accrual INTEGER,
+		accrual NUMERIC(20, 2),
 		status VARCHAR NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (user_id) REFERENCES users(id)
@@ -53,8 +53,8 @@ func createTables(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS balances (
 	   id SERIAL PRIMARY KEY,
 	   user_id INTEGER NOT NULL UNIQUE,
-	   current_balance DOUBLE PRECISION,
-	   withdrawn INTEGER,
+	   current_balance NUMERIC(20, 2),
+	   withdrawn NUMERIC(20, 2),
 	   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	   FOREIGN KEY (user_id) REFERENCES users(id)
 	)`
@@ -64,7 +64,7 @@ func createTables(db *sql.DB) error {
 	   id SERIAL PRIMARY KEY,
 	   user_id INTEGER NOT NULL,
 	   order_number BIGINT NOT NULL,
-	   transaction_sum DOUBLE PRECISION,
+	   transaction_sum NUMERIC(20, 2),
 	   processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	   FOREIGN KEY (user_id) REFERENCES users(id)
 	)`
@@ -127,11 +127,33 @@ func CreateUser(userName, passwordHash, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx,
-		`INSERT INTO users (user_name, password, token) VALUES ($1, $2, $3)`,
-		userName, passwordHash, token,
-	)
-	return err
+	tx, err := store.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	var userID int
+	// Вставляем пользователя и получаем user_id
+	err = tx.QueryRowContext(ctx,
+		`INSERT INTO users (user_name, password, token) VALUES ($1, $2, $3) 
+				RETURNING id`, userName, passwordHash, token).Scan(&userID)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to insert user and get user_id: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO balances (user_id, current_balance, withdrawn) VALUES ($1, $2, $3)`,
+		userID, 0, 0)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("failed to insert balance: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 func SetNewTokenByUser(userName, token string) error {
@@ -207,17 +229,31 @@ func GetAllOrdersByUserId(userID int) ([]storage_models.Order, error) {
 	for rows.Next() {
 		var orderID string
 		var status string
-		var accrual sql.NullInt64
+		var accrual sql.NullString
 		var createdAt string
 
 		if err := rows.Scan(&orderID, &status, &accrual, &createdAt); err != nil {
 			return nil, err
 		}
 
+		var accrualDecimal *decimal.Decimal
+		var accrualFloat float64
+		if accrual.Valid {
+			value, err := decimal.NewFromString(accrual.String)
+			if err != nil {
+				return nil, err
+			}
+			if !value.IsZero() {
+				accrualDecimal = &value
+			}
+			f, _ := accrualDecimal.Float64()
+			accrualFloat = f
+		}
+
 		result = append(result, storage_models.Order{
 			Number:     orderID,
 			Status:     status,
-			Accrual:    utils.GetValueByNullInt64(accrual),
+			Accrual:    accrualFloat,
 			UploadedAt: utils.ConvertTime(createdAt),
 		})
 	}
@@ -240,15 +276,28 @@ func GetBalanceByUserId(userID int) (storage_models.Balance, error) {
 
 	var result storage_models.Balance
 	for rows.Next() {
-		var currentBalance float64
-		var withdrawn int
+		var currentBalance string
+		var withdrawn string
 
 		if err := rows.Scan(&currentBalance, &withdrawn); err != nil {
 			return storage_models.Balance{}, err
 		}
+
+		currentBalanceDecimal, errCurrentBalance := decimal.NewFromString(currentBalance)
+		if errCurrentBalance != nil {
+			return storage_models.Balance{}, errCurrentBalance
+		}
+		currentFloat, _ := currentBalanceDecimal.Float64()
+
+		withdrawnDecimal, errWithdrawn := decimal.NewFromString(withdrawn)
+		if errWithdrawn != nil {
+			return storage_models.Balance{}, errWithdrawn
+		}
+		withdrawnFloat, _ := withdrawnDecimal.Float64()
+
 		result = storage_models.Balance{
-			Current:   math.Round(currentBalance*10) / 10, //преобразование ответа с 1 знаком после запятой
-			Withdrawn: withdrawn,
+			Current:   currentFloat,
+			Withdrawn: withdrawnFloat,
 		}
 	}
 
@@ -322,16 +371,22 @@ func GetAllTransactionByUserId(userID int) ([]storage_models.Transaction, error)
 	var result []storage_models.Transaction
 	for rows.Next() {
 		var orderNumber string
-		var transactionSum float64
+		var transactionSum string
 		var processedAt string
 
 		if err := rows.Scan(&orderNumber, &transactionSum, &processedAt); err != nil {
 			return nil, err
 		}
 
+		transactionSumDecimal, err := decimal.NewFromString(transactionSum)
+		if err != nil {
+			return nil, err
+		}
+		transactionSumFloat, _ := transactionSumDecimal.Float64()
+
 		result = append(result, storage_models.Transaction{
 			OrderNumber: orderNumber,
-			Sum:         transactionSum,
+			Sum:         transactionSumFloat,
 			ProcessedAt: utils.ConvertTime(processedAt),
 		})
 	}
