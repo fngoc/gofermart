@@ -8,9 +8,9 @@ import (
 )
 
 type flags struct {
-	ServerAddress string
-	SystemAddress string
-	DBConf        string
+	AccrualAddress string
+	ServerAddress  string
+	DBConf         string
 }
 
 const (
@@ -22,27 +22,27 @@ const (
 var Flags flags
 
 func ParseArgs() {
-	flag.StringVar(&Flags.ServerAddress, "a", defaultServerAddress, "server address")
-	flag.StringVar(&Flags.SystemAddress, "r", defaultSystemAddress, "system address")
+	flag.StringVar(&Flags.AccrualAddress, "a", defaultServerAddress, "accrual address")
+	flag.StringVar(&Flags.ServerAddress, "r", defaultSystemAddress, "server address")
 	flag.StringVar(&Flags.DBConf, "d", defaultPostgresParams, "db params")
 	flag.Parse()
 
 	serverAddressEnv, findAddress := os.LookupEnv("RUN_ADDRESS")
-	systemAddress, findSystemAddress := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS")
+	accrualAddress, findSystemAddress := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS")
 	DBConf, findDBConf := os.LookupEnv("DATABASE_URI")
 
 	if findAddress {
-		Flags.ServerAddress = serverAddressEnv
+		Flags.AccrualAddress = accrualAddress
 	}
 	if findSystemAddress {
-		Flags.SystemAddress = systemAddress
+		Flags.ServerAddress = serverAddressEnv
 	}
 	if findDBConf {
 		Flags.DBConf = DBConf
 	}
 	logger.Log.Info(
-		fmt.Sprintf("Parse argument's is done, server addres: [%s], system addres: [%s], db url: [%s]",
-			Flags.ServerAddress, Flags.SystemAddress, Flags.DBConf),
+		fmt.Sprintf("Parse argument's is done, accrual addres: [%s], server addres: [%s], db url: [%s]",
+			Flags.AccrualAddress, Flags.ServerAddress, Flags.DBConf),
 	)
 }
 

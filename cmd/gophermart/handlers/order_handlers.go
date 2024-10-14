@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
+	"github.com/fngoc/gofermart/cmd/gophermart/scheduler"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	"net/http"
@@ -65,6 +66,7 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	scheduler.OrdersForCheck[orderId] = "NEW"
 	writer.WriteHeader(http.StatusAccepted)
 }
 
