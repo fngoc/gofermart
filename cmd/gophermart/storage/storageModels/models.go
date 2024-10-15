@@ -1,4 +1,4 @@
-package storage_models
+package storageModels
 
 type Order struct {
 	Number     string  `json:"number"`

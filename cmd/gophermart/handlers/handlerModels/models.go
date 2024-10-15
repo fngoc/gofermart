@@ -1,4 +1,4 @@
-package handler_models
+package handlerModels
 
 type AuthRequest struct {
 	Login    string `json:"login"`

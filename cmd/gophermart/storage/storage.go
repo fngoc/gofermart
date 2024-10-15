@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage/storage_models"
+	"github.com/fngoc/gofermart/cmd/gophermart/storage/storageModels"
 	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/shopspring/decimal"
@@ -211,7 +211,7 @@ func CreateOrder(userID int, orderID int64) error {
 	return nil
 }
 
-func GetAllOrdersByUserID(userID int) ([]storage_models.Order, error) {
+func GetAllOrdersByUserID(userID int) ([]storageModels.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -225,7 +225,7 @@ func GetAllOrdersByUserID(userID int) ([]storage_models.Order, error) {
 		return nil, rows.Err()
 	}
 
-	var result []storage_models.Order
+	var result []storageModels.Order
 	for rows.Next() {
 		var orderID string
 		var status string
@@ -250,7 +250,7 @@ func GetAllOrdersByUserID(userID int) ([]storage_models.Order, error) {
 			accrualFloat = f
 		}
 
-		result = append(result, storage_models.Order{
+		result = append(result, storageModels.Order{
 			Number:     orderID,
 			Status:     status,
 			Accrual:    accrualFloat,
@@ -260,7 +260,7 @@ func GetAllOrdersByUserID(userID int) ([]storage_models.Order, error) {
 	return result, nil
 }
 
-func GetBalanceByUserID(userID int) (storage_models.Balance, error) {
+func GetBalanceByUserID(userID int) (storageModels.Balance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -268,34 +268,34 @@ func GetBalanceByUserID(userID int) (storage_models.Balance, error) {
 		`SELECT current_balance, withdrawn FROM balances
                 WHERE user_id = $1`, userID)
 	if err != nil {
-		return storage_models.Balance{}, err
+		return storageModels.Balance{}, err
 	}
 	if rows.Err() != nil {
-		return storage_models.Balance{}, rows.Err()
+		return storageModels.Balance{}, rows.Err()
 	}
 
-	var result storage_models.Balance
+	var result storageModels.Balance
 	for rows.Next() {
 		var currentBalance string
 		var withdrawn string
 
 		if err := rows.Scan(&currentBalance, &withdrawn); err != nil {
-			return storage_models.Balance{}, err
+			return storageModels.Balance{}, err
 		}
 
 		currentBalanceDecimal, errCurrentBalance := decimal.NewFromString(currentBalance)
 		if errCurrentBalance != nil {
-			return storage_models.Balance{}, errCurrentBalance
+			return storageModels.Balance{}, errCurrentBalance
 		}
 		currentFloat, _ := currentBalanceDecimal.Float64()
 
 		withdrawnDecimal, errWithdrawn := decimal.NewFromString(withdrawn)
 		if errWithdrawn != nil {
-			return storage_models.Balance{}, errWithdrawn
+			return storageModels.Balance{}, errWithdrawn
 		}
 		withdrawnFloat, _ := withdrawnDecimal.Float64()
 
-		result = storage_models.Balance{
+		result = storageModels.Balance{
 			Current:   currentFloat,
 			Withdrawn: withdrawnFloat,
 		}
@@ -354,7 +354,7 @@ func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
 	return newBalance, nil
 }
 
-func GetAllTransactionByUserID(userID int) ([]storage_models.Transaction, error) {
+func GetAllTransactionByUserID(userID int) ([]storageModels.Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -368,7 +368,7 @@ func GetAllTransactionByUserID(userID int) ([]storage_models.Transaction, error)
 		return nil, rows.Err()
 	}
 
-	var result []storage_models.Transaction
+	var result []storageModels.Transaction
 	for rows.Next() {
 		var orderNumber string
 		var transactionSum string
@@ -384,7 +384,7 @@ func GetAllTransactionByUserID(userID int) ([]storage_models.Transaction, error)
 		}
 		transactionSumFloat, _ := transactionSumDecimal.Float64()
 
-		result = append(result, storage_models.Transaction{
+		result = append(result, storageModels.Transaction{
 			OrderNumber: orderNumber,
 			Sum:         transactionSumFloat,
 			ProcessedAt: utils.ConvertTime(processedAt),

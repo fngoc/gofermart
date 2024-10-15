@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	handler_models "github.com/fngoc/gofermart/cmd/gophermart/handlers/handler_models"
+	handler_models "github.com/fngoc/gofermart/cmd/gophermart/handlers/handlerModels"
 	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
 	"github.com/fngoc/gofermart/cmd/gophermart/hash"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
