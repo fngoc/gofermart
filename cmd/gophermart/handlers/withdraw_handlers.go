@@ -18,14 +18,14 @@ func ListWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 	}
 
 	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIdByName(userNameByToken)
+	userID, err := storage.GetUserIDByName(userNameByToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Transactions error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	transactions, err := storage.GetAllTransactionByUserId(userID)
+	transactions, err := storage.GetAllTransactionByUserID(userID)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Transactions error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)

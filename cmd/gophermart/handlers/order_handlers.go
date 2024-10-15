@@ -43,7 +43,7 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userName := storage.GetUserNameByOrderId(orderId)
+	userName := storage.GetUserNameByOrderID(orderId)
 	if userName != "" {
 		if userName == userNameByToken {
 			writer.WriteHeader(http.StatusOK)
@@ -54,14 +54,14 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	userId, err := storage.GetUserIdByName(userNameByToken)
+	userID, err := storage.GetUserIDByName(userNameByToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Create order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if err := storage.CreateOrder(userId, orderId); err != nil {
+	if err := storage.CreateOrder(userID, orderId); err != nil {
 		logger.Log.Info(fmt.Sprintf("Create order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -78,14 +78,14 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userId, err := storage.GetUserIdByName(userNameByToken)
+	userID, err := storage.GetUserIDByName(userNameByToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("List order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	orders, err := storage.GetAllOrdersByUserId(userId)
+	orders, err := storage.GetAllOrdersByUserID(userID)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Get all orders error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)

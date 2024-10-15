@@ -104,7 +104,7 @@ func authCheckRequest(request *http.Request) (handler_models.AuthRequest, error)
 	decoder := json.NewDecoder(request.Body)
 	var body handler_models.AuthRequest
 	if err := decoder.Decode(&body); err != nil {
-		return handler_models.AuthRequest{}, fmt.Errorf(fmt.Sprintf("decode body error: %s", err))
+		return handler_models.AuthRequest{}, fmt.Errorf("decode body error: %s", err)
 	}
 
 	if body.Login == "" || body.Password == "" {

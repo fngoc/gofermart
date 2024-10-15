@@ -22,14 +22,14 @@ func GetBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIdByName(userNameByToken)
+	userID, err := storage.GetUserIDByName(userNameByToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Balance error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	balance, err := storage.GetBalanceByUserId(userID)
+	balance, err := storage.GetBalanceByUserID(userID)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Balance error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -78,7 +78,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 	}
 
 	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIdByName(userNameByToken)
+	userID, err := storage.GetUserIDByName(userNameByToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Balance withdraw error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -91,7 +91,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	if !storage.IsUserHasOrderId(userID, orderID) {
+	if !storage.IsUserHasOrderID(userID, orderID) {
 		logger.Log.Info(fmt.Sprintf("User %d does not have order id %d", userID, orderID))
 		writer.WriteHeader(http.StatusUnprocessableEntity)
 		return

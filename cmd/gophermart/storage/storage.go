@@ -166,7 +166,7 @@ func SetNewTokenByUser(userName, token string) error {
 	return err
 }
 
-func GetUserNameByOrderId(orderId int64) string {
+func GetUserNameByOrderID(orderId int64) string {
 	var userName string
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -183,7 +183,7 @@ func GetUserNameByOrderId(orderId int64) string {
 	return userName
 }
 
-func GetUserIdByName(userName string) (int, error) {
+func GetUserIDByName(userName string) (int, error) {
 	var id int
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -211,7 +211,7 @@ func CreateOrder(userID int, orderID int64) error {
 	return nil
 }
 
-func GetAllOrdersByUserId(userID int) ([]storage_models.Order, error) {
+func GetAllOrdersByUserID(userID int) ([]storage_models.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -260,7 +260,7 @@ func GetAllOrdersByUserId(userID int) ([]storage_models.Order, error) {
 	return result, nil
 }
 
-func GetBalanceByUserId(userID int) (storage_models.Balance, error) {
+func GetBalanceByUserID(userID int) (storage_models.Balance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -304,7 +304,7 @@ func GetBalanceByUserId(userID int) (storage_models.Balance, error) {
 	return result, nil
 }
 
-func IsUserHasOrderId(userID, orderID int) bool {
+func IsUserHasOrderID(userID, orderID int) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -354,7 +354,7 @@ func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
 	return newBalance, nil
 }
 
-func GetAllTransactionByUserId(userID int) ([]storage_models.Transaction, error) {
+func GetAllTransactionByUserID(userID int) ([]storage_models.Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
