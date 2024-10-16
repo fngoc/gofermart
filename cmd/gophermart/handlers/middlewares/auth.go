@@ -20,13 +20,12 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		if token == "" {
 			logger.Log.Warn("No auth header found")
 			w.WriteHeader(http.StatusUnauthorized)
-			next.ServeHTTP(w, r)
 			return
 		}
 		userName, err := jwt.GetUserNameByToken(token)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
 			logger.Log.Warn(fmt.Sprintf("Decode jwt error: %s", err))
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
