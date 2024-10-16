@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
@@ -25,7 +26,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		userName, err := jwt.GetUserNameByToken(token)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			logger.Log.Info(err.Error())
+			logger.Log.Warn(fmt.Sprintf("Decode jwt error: %s", err))
 			return
 		}
 

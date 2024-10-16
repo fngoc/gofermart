@@ -34,7 +34,7 @@ func requestOrderStatus(orderID int64, accrualAddress string) time.Duration {
 	// Выполняем запрос к стороннему сервису
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/orders/%d", accrualAddress, orderID))
 	if err != nil {
-		logger.Log.Info(fmt.Sprintf("Request error for order %d: %v", orderID, err))
+		logger.Log.Info(fmt.Sprintf("Request error for order %d: %s", orderID, err))
 		return timeOut
 	}
 	defer resp.Body.Close()
@@ -44,7 +44,7 @@ func requestOrderStatus(orderID int64, accrualAddress string) time.Duration {
 		var orderResponse AccrualOrderResponse
 		err := json.NewDecoder(resp.Body).Decode(&orderResponse)
 		if err != nil {
-			logger.Log.Warn(fmt.Sprintf("Response decoding error for order %d: %v", orderID, err))
+			logger.Log.Warn(fmt.Sprintf("Response decoding error for order %d: %s", orderID, err))
 			return timeOut
 		}
 		// Отправляем обновлённые данные в канал
@@ -58,7 +58,7 @@ func requestOrderStatus(orderID int64, accrualAddress string) time.Duration {
 		retryAfter := resp.Header.Get("Retry-After")
 		retrySeconds, err := strconv.Atoi(retryAfter)
 		if err != nil {
-			log.Printf("Retry-After header parsing error for order %d: %v", orderID, err)
+			log.Printf("Retry-After header parsing error for order %d: %s", orderID, err)
 			return timeOut
 		}
 		logger.Log.Info(fmt.Sprintf("Number of requests for order %d exceeded, repeat in %d seconds", orderID, retrySeconds))
@@ -100,7 +100,7 @@ func UpdateOrderStatuses() {
 			if err == nil {
 				err := storage.UpdateOrderStatus(orderID, updatedOrder.Status)
 				if err != nil {
-					logger.Log.Error(fmt.Sprintf("Error updating order status %d, status %s: %v", orderID, updatedOrder.Status, err))
+					logger.Log.Error(fmt.Sprintf("Error updating order status %d, status %s: %s", orderID, updatedOrder.Status, err))
 					continue
 				}
 				logger.Log.Info(fmt.Sprintf("Order status updated %s: %s", updatedOrder.Order, updatedOrder.Status))

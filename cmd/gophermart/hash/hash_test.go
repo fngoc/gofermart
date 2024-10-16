@@ -35,10 +35,10 @@ func TestHashingPassword(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			hash, err := HashingPassword(tt.password)
 			if (err != nil) != tt.hasError {
-				t.Errorf("HashingPassword() error = %v, expected error = %v", err, tt.hasError)
+				t.Errorf("HashingPassword() error = %s, expected error = %v", err, tt.hasError)
 			}
 			if hash != tt.expected {
-				t.Errorf("HashingPassword() = %v, expected = %v", hash, tt.expected)
+				t.Errorf("HashingPassword() = %s, expected = %v", hash, tt.expected)
 			}
 		})
 	}
