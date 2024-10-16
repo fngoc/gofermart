@@ -14,26 +14,19 @@ const cookieName = "token"
 // AuthMiddleware — middleware для аунтификации HTTP-запросов.
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var userName string
-		cookie, _ := r.Cookie(cookieName)
 		token := r.Header.Get("Authorization")
 
-		if token == "" && cookie == nil {
-			logger.Log.Warn("No auth cookie and header found")
+		if token == "" {
+			logger.Log.Warn("No auth header found")
 			w.WriteHeader(http.StatusUnauthorized)
 			next.ServeHTTP(w, r)
 			return
-		} else {
-			if cookie != nil {
-				token = cookie.Value
-			}
-			userNameString, err := jwt.GetUserNameByToken(token)
-			if err != nil {
-				w.WriteHeader(http.StatusUnauthorized)
-				logger.Log.Info(err.Error())
-				return
-			}
-			userName = userNameString
+		}
+		userName, err := jwt.GetUserNameByToken(token)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			logger.Log.Info(err.Error())
+			return
 		}
 
 		ctx := context.WithValue(r.Context(), constants.UserNameKey, userName)
