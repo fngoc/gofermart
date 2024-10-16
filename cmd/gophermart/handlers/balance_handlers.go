@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/handlerModels"
+	"github.com/fngoc/gofermart/cmd/gophermart/handlers/handlermodels"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"github.com/fngoc/gofermart/cmd/gophermart/utils"
@@ -63,7 +63,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 	}
 
 	decoder := json.NewDecoder(request.Body)
-	var body handlerModels.WithdrawResponse
+	var body handlermodels.WithdrawResponse
 	if err := decoder.Decode(&body); err != nil {
 		logger.Log.Info(fmt.Sprintf("Decode body error: %s", err))
 		writer.WriteHeader(http.StatusBadRequest)

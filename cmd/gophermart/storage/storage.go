@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage/storageModels"
+	"github.com/fngoc/gofermart/cmd/gophermart/storage/storagemodels"
 	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/shopspring/decimal"
@@ -166,7 +166,7 @@ func SetNewTokenByUser(userName, token string) error {
 	return err
 }
 
-func GetUserNameByOrderID(orderId int64) string {
+func GetUserNameByOrderID(orderID int64) string {
 	var userName string
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -175,7 +175,7 @@ func GetUserNameByOrderID(orderId int64) string {
 		`SELECT users.user_name FROM orders
     			JOIN users 
     			    ON orders.user_id = users.id
-                WHERE orders.order_id = $1;`, orderId)
+                WHERE orders.order_id = $1;`, orderID)
 	err := row.Scan(&userName)
 	if err != nil {
 		return ""
@@ -211,7 +211,7 @@ func CreateOrder(userID int, orderID int64) error {
 	return nil
 }
 
-func GetAllOrdersByUserID(userID int) ([]storageModels.Order, error) {
+func GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -225,7 +225,7 @@ func GetAllOrdersByUserID(userID int) ([]storageModels.Order, error) {
 		return nil, rows.Err()
 	}
 
-	var result []storageModels.Order
+	var result []storagemodels.Order
 	for rows.Next() {
 		var orderID string
 		var status string
@@ -250,7 +250,7 @@ func GetAllOrdersByUserID(userID int) ([]storageModels.Order, error) {
 			accrualFloat = f
 		}
 
-		result = append(result, storageModels.Order{
+		result = append(result, storagemodels.Order{
 			Number:     orderID,
 			Status:     status,
 			Accrual:    accrualFloat,
@@ -260,7 +260,7 @@ func GetAllOrdersByUserID(userID int) ([]storageModels.Order, error) {
 	return result, nil
 }
 
-func GetBalanceByUserID(userID int) (storageModels.Balance, error) {
+func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -268,34 +268,34 @@ func GetBalanceByUserID(userID int) (storageModels.Balance, error) {
 		`SELECT current_balance, withdrawn FROM balances
                 WHERE user_id = $1`, userID)
 	if err != nil {
-		return storageModels.Balance{}, err
+		return storagemodels.Balance{}, err
 	}
 	if rows.Err() != nil {
-		return storageModels.Balance{}, rows.Err()
+		return storagemodels.Balance{}, rows.Err()
 	}
 
-	var result storageModels.Balance
+	var result storagemodels.Balance
 	for rows.Next() {
 		var currentBalance string
 		var withdrawn string
 
 		if err := rows.Scan(&currentBalance, &withdrawn); err != nil {
-			return storageModels.Balance{}, err
+			return storagemodels.Balance{}, err
 		}
 
 		currentBalanceDecimal, errCurrentBalance := decimal.NewFromString(currentBalance)
 		if errCurrentBalance != nil {
-			return storageModels.Balance{}, errCurrentBalance
+			return storagemodels.Balance{}, errCurrentBalance
 		}
 		currentFloat, _ := currentBalanceDecimal.Float64()
 
 		withdrawnDecimal, errWithdrawn := decimal.NewFromString(withdrawn)
 		if errWithdrawn != nil {
-			return storageModels.Balance{}, errWithdrawn
+			return storagemodels.Balance{}, errWithdrawn
 		}
 		withdrawnFloat, _ := withdrawnDecimal.Float64()
 
-		result = storageModels.Balance{
+		result = storagemodels.Balance{
 			Current:   currentFloat,
 			Withdrawn: withdrawnFloat,
 		}
@@ -312,10 +312,7 @@ func IsUserHasOrderID(userID, orderID int) bool {
 	err := store.QueryRowContext(ctx,
 		`SELECT 1 FROM orders
          		WHERE order_id = $1 AND user_id = $2`, orderID, userID).Scan(&exists)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
@@ -354,7 +351,7 @@ func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
 	return newBalance, nil
 }
 
-func GetAllTransactionByUserID(userID int) ([]storageModels.Transaction, error) {
+func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -368,7 +365,7 @@ func GetAllTransactionByUserID(userID int) ([]storageModels.Transaction, error) 
 		return nil, rows.Err()
 	}
 
-	var result []storageModels.Transaction
+	var result []storagemodels.Transaction
 	for rows.Next() {
 		var orderNumber string
 		var transactionSum string
@@ -384,7 +381,7 @@ func GetAllTransactionByUserID(userID int) ([]storageModels.Transaction, error) 
 		}
 		transactionSumFloat, _ := transactionSumDecimal.Float64()
 
-		result = append(result, storageModels.Transaction{
+		result = append(result, storagemodels.Transaction{
 			OrderNumber: orderNumber,
 			Sum:         transactionSumFloat,
 			ProcessedAt: utils.ConvertTime(processedAt),
