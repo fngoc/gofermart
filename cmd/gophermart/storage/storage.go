@@ -295,9 +295,6 @@ func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 		}
 		withdrawnFloat, _ := withdrawnDecimal.Float64()
 
-		fmt.Printf("\nI AM HERE current", currentBalanceDecimal, currentFloat)
-		fmt.Printf("\nI AM HERE withdrawn", withdrawnDecimal, withdrawnFloat, "\n")
-
 		result = storagemodels.Balance{
 			Current:   currentFloat,
 			Withdrawn: withdrawnFloat,
@@ -398,12 +395,13 @@ func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) 
 	return result, nil
 }
 
-func UpdateOrderStatus(orderID int, accrual float64, status string) error {
+func UpdateAccrualData(orderID int, accrual float64, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := store.ExecContext(ctx,
 		`UPDATE orders SET status = $1, accrual = $2 
-             	WHERE order_id = $3;`, status, fmt.Sprintf("%.2f", accrual), orderID)
+             	WHERE order_id = $3;`, status, accrual, orderID)
+
 	return err
 }
