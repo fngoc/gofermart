@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/handlers/handlermodels"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
-	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	"net/http"
 	"strconv"
 	"strings"
@@ -85,7 +85,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	if !utils.CheckLunAlg(strconv.FormatInt(int64(orderID), 10)) {
+	if err := goluhn.Validate(body.Order); err != nil {
 		logger.Log.Info("False check Lun Algorithm")
 		writer.WriteHeader(http.StatusUnprocessableEntity)
 		return

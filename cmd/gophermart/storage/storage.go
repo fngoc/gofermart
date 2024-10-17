@@ -166,7 +166,7 @@ func SetNewTokenByUser(userName, token string) error {
 	return err
 }
 
-func GetUserNameByOrderID(orderID int64) string {
+func GetUserNameByOrderID(orderID int) string {
 	var userName string
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -198,7 +198,7 @@ func GetUserIDByName(userName string) (int, error) {
 	return id, nil
 }
 
-func CreateOrder(userID int, orderID int64) error {
+func CreateOrder(userID int, orderID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 

@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/scheduler"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
-	"github.com/fngoc/gofermart/cmd/gophermart/utils"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,14 +29,14 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	decoder := json.NewDecoder(request.Body)
-	var orderID int64
+	var orderID int
 	if err := decoder.Decode(&orderID); err != nil {
 		logger.Log.Info(fmt.Sprintf("decode body error: %s", err))
 		writer.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	if !utils.CheckLunAlg(strconv.FormatInt(orderID, 10)) {
+	if err := goluhn.Validate(strconv.Itoa(orderID)); err != nil {
 		logger.Log.Info("False check Lun Algorithm")
 		writer.WriteHeader(http.StatusUnprocessableEntity)
 		return

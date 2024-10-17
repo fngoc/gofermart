@@ -20,7 +20,7 @@ type AccrualOrderResponse struct {
 }
 
 // OrdersForCheck структура для хранения состояния заказов
-var OrdersForCheck = map[int64]string{}
+var OrdersForCheck = map[int]string{}
 
 // Mutex для безопасного доступа к данным заказов
 var mutex sync.Mutex
@@ -29,7 +29,7 @@ var mutex sync.Mutex
 var orderStatusChan = make(chan AccrualOrderResponse)
 
 // Функция для запроса статуса заказа у стороннего сервиса
-func requestOrderStatus(orderID int64, accrualAddress string) time.Duration {
+func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
 	var timeOut = 10 * time.Second
 	// Выполняем запрос к стороннему сервису
 	resp, err := http.Get(fmt.Sprintf("%s/api/orders/%d", accrualAddress, orderID))
