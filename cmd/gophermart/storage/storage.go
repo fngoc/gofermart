@@ -401,6 +401,6 @@ func UpdateOrderStatus(orderID int, accrual float64, status string) error {
 
 	_, err := store.ExecContext(ctx,
 		`UPDATE orders SET status = $1, accrual = $2 
-             	WHERE order_id = $3;`, status, accrual, orderID)
+             	WHERE order_id = $3;`, status, fmt.Sprintf("%.2f", accrual), orderID)
 	return err
 }
