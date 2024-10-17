@@ -47,6 +47,7 @@ func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
 			logger.Log.Warn(fmt.Sprintf("Response decoding error for order %d: %s", orderID, err))
 			return timeOut
 		}
+		fmt.Println("I AM HEHEHEHE", orderResponse.Accrual, orderResponse.Status, orderResponse.Status)
 		// Отправляем обновлённые данные в канал
 		orderStatusChan <- orderResponse
 		return timeOut
