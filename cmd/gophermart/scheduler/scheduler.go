@@ -30,7 +30,7 @@ var orderStatusChan = make(chan AccrualOrderResponse)
 
 // Функция для запроса статуса заказа у стороннего сервиса
 func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
-	var timeOut = 1 * time.Second
+	var timeOut = 2 * time.Second
 	// Выполняем запрос к стороннему сервису
 	resp, err := http.Get(fmt.Sprintf("%s/api/orders/%d", accrualAddress, orderID))
 	if err != nil {

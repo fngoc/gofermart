@@ -334,8 +334,7 @@ func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
 		`UPDATE balances
 				SET current_balance = current_balance - $1, withdrawn = withdrawn + $1
 				WHERE user_id = $2 AND current_balance >= $1
-				RETURNING current_balance
-				`, amountToDeduct, userID).Scan(&newBalance)
+				RETURNING current_balance`, amountToDeduct, userID).Scan(&newBalance)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, fmt.Errorf("failed to update balance: %w", err)
@@ -396,12 +395,45 @@ func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) 
 }
 
 func UpdateAccrualData(orderID int, accrual float64, status string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx,
+	tx, err := store.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	var userID int
+	row := tx.QueryRowContext(ctx,
+		`SELECT user_id FROM orders
+                WHERE order_id = $1;`, orderID)
+	err = row.Scan(&userID)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("failed to find userID: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx,
 		`UPDATE orders SET status = $1, accrual = $2 
              	WHERE order_id = $3;`, status, accrual, orderID)
 
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("failed to update order: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`UPDATE balances
+				SET current_balance = current_balance + $1
+				WHERE user_id = $2 `, accrual, userID)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("failed to update balance: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 	return err
 }
