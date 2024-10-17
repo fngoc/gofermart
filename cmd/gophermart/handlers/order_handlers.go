@@ -93,6 +93,7 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	if len(orders) == 0 {
+		logger.Log.Info("No orders found")
 		writer.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -100,6 +101,7 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 	buf := bytes.Buffer{}
 	encode := json.NewEncoder(&buf)
 	if err := encode.Encode(orders); err != nil {
+		logger.Log.Info(fmt.Sprintf("Encode order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}

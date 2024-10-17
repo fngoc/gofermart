@@ -9,9 +9,6 @@ import (
 	"net/http"
 )
 
-// cookieName наименование куки
-const cookieName = "token"
-
 // AuthMiddleware — middleware для аунтификации HTTP-запросов.
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
