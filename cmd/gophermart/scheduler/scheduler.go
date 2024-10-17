@@ -98,7 +98,7 @@ func UpdateOrderStatuses() {
 			mutex.Lock()
 			orderID, err := strconv.Atoi(updatedOrder.Order)
 			if err == nil {
-				err := storage.UpdateOrderStatus(orderID, updatedOrder.Status)
+				err := storage.UpdateOrderStatus(orderID, updatedOrder.Accrual, updatedOrder.Status)
 				if err != nil {
 					logger.Log.Error(fmt.Sprintf("Error updating order status %d, status %s: %s", orderID, updatedOrder.Status, err))
 					continue

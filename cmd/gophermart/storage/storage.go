@@ -395,12 +395,12 @@ func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) 
 	return result, nil
 }
 
-func UpdateOrderStatus(orderID int, status string) error {
+func UpdateOrderStatus(orderID int, accrual float64, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := store.ExecContext(ctx,
-		`UPDATE orders SET status = $1 
-             	WHERE order_id = $2;`, status, orderID)
+		`UPDATE orders SET status = $1, accrual = $2 
+             	WHERE order_id = $3;`, status, accrual, orderID)
 	return err
 }
