@@ -295,6 +295,9 @@ func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 		}
 		withdrawnFloat, _ := withdrawnDecimal.Float64()
 
+		fmt.Printf("\nI AM HERE current", currentBalanceDecimal, currentFloat)
+		fmt.Printf("\nI AM HERE withdrawn", withdrawnDecimal, withdrawnFloat, "\n")
+
 		result = storagemodels.Balance{
 			Current:   currentFloat,
 			Withdrawn: withdrawnFloat,
