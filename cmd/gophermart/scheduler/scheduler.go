@@ -32,7 +32,7 @@ var orderStatusChan = make(chan AccrualOrderResponse)
 func requestOrderStatus(orderID int64, accrualAddress string) time.Duration {
 	var timeOut = 10 * time.Second
 	// Выполняем запрос к стороннему сервису
-	resp, err := http.Get(fmt.Sprintf("http://%s/api/orders/%d", accrualAddress, orderID))
+	resp, err := http.Get(fmt.Sprintf("%s/api/orders/%d", accrualAddress, orderID))
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Request error for order %d: %s", orderID, err))
 		return timeOut

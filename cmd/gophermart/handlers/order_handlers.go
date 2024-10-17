@@ -101,7 +101,7 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 	buf := bytes.Buffer{}
 	encode := json.NewEncoder(&buf)
 	if err := encode.Encode(orders); err != nil {
-		logger.Log.Info(fmt.Sprintf("Encode order error: %s", err))
+		logger.Log.Warn(fmt.Sprintf("Encode order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
