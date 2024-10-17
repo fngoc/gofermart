@@ -312,7 +312,7 @@ func IsUserHasOrderID(userID, orderID int) bool {
 	err := store.QueryRowContext(ctx,
 		`SELECT 1 FROM orders
          		WHERE order_id = $1 AND user_id = $2`, orderID, userID).Scan(&exists)
-	return err == nil
+	return err == nil && exists == 1
 }
 
 func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
