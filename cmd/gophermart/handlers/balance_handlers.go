@@ -91,11 +91,11 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	if !storage.IsUserHasOrderID(userID, orderID) {
-		logger.Log.Info(fmt.Sprintf("User %d does not have order id %d", userID, orderID))
-		writer.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
+	//if !storage.IsUserHasOrderID(userID, orderID) {
+	//	logger.Log.Info(fmt.Sprintf("User %d does not have order id %d", userID, orderID))
+	//	writer.WriteHeader(http.StatusUnprocessableEntity)
+	//	return
+	//}
 
 	_, err = storage.DeductBalance(userID, orderID, body.Sum)
 	if err != nil {
