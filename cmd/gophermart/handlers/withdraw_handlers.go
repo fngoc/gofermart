@@ -10,6 +10,7 @@ import (
 	"net/http"
 )
 
+// ListWithdrawalsBalanceWebhook получение истории операций, GET HTTP-запрос
 func ListWithdrawalsBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusBadRequest)

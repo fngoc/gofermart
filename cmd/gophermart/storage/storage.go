@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// store инстанс БД
 var store *sql.DB
 
 // InitializeDB инициализация базы данных
@@ -30,6 +31,7 @@ func InitializeDB(dbConf string) error {
 	return nil
 }
 
+// createTables создание таблиц
 func createTables(db *sql.DB) error {
 	createUserTableQuery := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -58,7 +60,6 @@ func createTables(db *sql.DB) error {
 	   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	   FOREIGN KEY (user_id) REFERENCES users(id)
 	)`
-
 	createTransactionHistoryTableQuery := `
 	CREATE TABLE IF NOT EXISTS transaction_history (
 	   id SERIAL PRIMARY KEY,
@@ -92,6 +93,7 @@ func createTables(db *sql.DB) error {
 	return nil
 }
 
+// IsUserCreated проверка на существование пользователя
 func IsUserCreated(userName string) bool {
 	var isCreated bool
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -108,6 +110,7 @@ func IsUserCreated(userName string) bool {
 	return isCreated
 }
 
+// IsUserAuthenticated проверка на авторизацию пользователя
 func IsUserAuthenticated(userName, passwordHash string) bool {
 	var IsAuthenticated bool
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -123,6 +126,7 @@ func IsUserAuthenticated(userName, passwordHash string) bool {
 	return IsAuthenticated
 }
 
+// CreateUser создание пользователя
 func CreateUser(userName, passwordHash, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -133,7 +137,6 @@ func CreateUser(userName, passwordHash, token string) error {
 	}
 
 	var userID int
-	// Вставляем пользователя и получаем user_id
 	err = tx.QueryRowContext(ctx,
 		`INSERT INTO users (user_name, password, token) VALUES ($1, $2, $3) 
 				RETURNING id`, userName, passwordHash, token).Scan(&userID)
@@ -156,6 +159,7 @@ func CreateUser(userName, passwordHash, token string) error {
 	return nil
 }
 
+// SetNewTokenByUser обновление токена авторизации
 func SetNewTokenByUser(userName, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -166,6 +170,7 @@ func SetNewTokenByUser(userName, token string) error {
 	return err
 }
 
+// GetUserNameByOrderID получение имени пользователя по orderID
 func GetUserNameByOrderID(orderID int) string {
 	var userName string
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -183,6 +188,7 @@ func GetUserNameByOrderID(orderID int) string {
 	return userName
 }
 
+// GetUserIDByName получение имени пользователя по userName
 func GetUserIDByName(userName string) (int, error) {
 	var id int
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -198,6 +204,7 @@ func GetUserIDByName(userName string) (int, error) {
 	return id, nil
 }
 
+// CreateOrder создание заказа
 func CreateOrder(userID int, orderID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -211,6 +218,7 @@ func CreateOrder(userID int, orderID int) error {
 	return nil
 }
 
+// GetAllOrdersByUserID получение всех заказов по userID
 func GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -260,6 +268,7 @@ func GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error) {
 	return result, nil
 }
 
+// GetBalanceByUserID получение баланса пользователя
 func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -304,6 +313,7 @@ func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 	return result, nil
 }
 
+// DeductBalance вычет баланса пользователя
 func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -339,6 +349,7 @@ func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
 	return newBalance, nil
 }
 
+// GetAllTransactionByUserID получение истории операций пользователя
 func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -378,6 +389,7 @@ func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) 
 	return result, nil
 }
 
+// UpdateAccrualData обновление заказа
 func UpdateAccrualData(orderID int, accrual float64, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

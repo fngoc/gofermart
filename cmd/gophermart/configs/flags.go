@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// flags тип аргументы программы
 type flags struct {
 	AccrualAddress string
 	ServerAddress  string
@@ -19,8 +20,10 @@ const (
 	defaultPostgresParams        = "host=localhost user=postgres password=postgres dbname=test_db sslmode=disable"
 )
 
+// Flags аргументы программы
 var Flags flags
 
+// ParseArgs функция для чтения аргументов программы
 func ParseArgs() {
 	flag.StringVar(&Flags.AccrualAddress, "a", defaultServerAddress, "accrual address")
 	flag.StringVar(&Flags.ServerAddress, "r", defaultSystemAddress, "server address")
@@ -46,6 +49,7 @@ func ParseArgs() {
 	)
 }
 
+// HasFlagOrEnvPostgresVariable проверка наличия env переменной
 func HasFlagOrEnvPostgresVariable() bool {
 	_, find := os.LookupEnv("DATABASE_URI")
 	if Flags.DBConf != defaultPostgresParams || find {

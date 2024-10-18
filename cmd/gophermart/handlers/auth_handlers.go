@@ -51,7 +51,7 @@ func RegisterWebhook(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-// AuntificationWebhook обработчик аунтификации, POST HTTP-запрос
+// AuntificationWebhook обработчик аутентификации, POST HTTP-запрос
 func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
 	body, err := authCheckRequest(request)
 	if err != nil {
@@ -91,6 +91,7 @@ func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
+// authCheckRequest общие проверки для HTTP-запросов
 func authCheckRequest(request *http.Request) (handler_models.AuthRequest, error) {
 	if request.Method != http.MethodPost {
 		return handler_models.AuthRequest{}, fmt.Errorf("method only accepts POST requests")

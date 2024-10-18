@@ -33,9 +33,7 @@ func Run() error {
 		r.Get("/withdrawals", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.ListWithdrawalsBalanceWebhook))))
 	})
 
-	// Запускаем горутину для опроса стороннего сервиса
 	go scheduler.FetchOrderStatuses(configs.Flags.AccrualAddress)
-	// Запускаем горутину для обновления статусов заказов
 	go scheduler.UpdateOrderStatuses()
 
 	return http.ListenAndServe(configs.Flags.ServerAddress, r)

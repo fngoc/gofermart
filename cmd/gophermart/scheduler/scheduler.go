@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// AccrualOrderResponse структура для хранения заказа
+// AccrualOrderResponse структура ответа
 type AccrualOrderResponse struct {
 	Order   string  `json:"order"`
 	Status  string  `json:"status"`
@@ -22,13 +22,13 @@ type AccrualOrderResponse struct {
 // OrdersForCheck структура для хранения состояния заказов
 var OrdersForCheck = map[int]string{}
 
-// Mutex для безопасного доступа к данным заказов
+// mutex для безопасного доступа к данным заказов
 var mutex sync.Mutex
 
-// Канал для передачи обновленных данных заказа
+// orderStatusChan канал для передачи обновленных данных заказа
 var orderStatusChan = make(chan AccrualOrderResponse)
 
-// Функция для запроса статуса заказа у стороннего сервиса
+// requestOrderStatus функция для запроса статуса заказа у стороннего сервиса
 func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
 	var timeOut = 2 * time.Second
 	// Выполняем запрос к стороннему сервису

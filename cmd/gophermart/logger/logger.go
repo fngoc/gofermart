@@ -52,7 +52,7 @@ func Initialize() error {
 	return nil
 }
 
-// RequestLogger — middlewares-логер для входящих HTTP-запросов.
+// RequestLogger middlewares-логер для входящих HTTP-запросов.
 func RequestLogger(handlerFunc http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		lw := loggingResponseWriter{

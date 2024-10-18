@@ -14,6 +14,7 @@ import (
 	"strings"
 )
 
+// LoadOrderWebhook обработчик сохранения заказа, POST HTTP-запрос
 func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -70,6 +71,7 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusAccepted)
 }
 
+// ListOrdersWebhook получения всех заказов, GET HTTP-запрос
 func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusBadRequest)

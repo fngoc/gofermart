@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// AuthMiddleware — middleware для аунтификации HTTP-запросов.
+// AuthMiddleware middleware для аутентификации HTTP-запросов
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")

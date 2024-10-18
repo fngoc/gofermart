@@ -7,11 +7,8 @@ type contextKey string
 type orderStatus string
 
 const (
-	// Статусы заказа
-	New        orderStatus = "NEW"
-	Processing orderStatus = "PROCESSING"
-	Invalid    orderStatus = "INVALID"
-	Processed  orderStatus = "PROCESSED"
+	// New статусы заказа
+	New orderStatus = "NEW"
 
 	// UserNameKey ключ для контекста
 	UserNameKey contextKey = "userName"

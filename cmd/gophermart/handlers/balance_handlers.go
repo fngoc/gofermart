@@ -14,6 +14,7 @@ import (
 	"strings"
 )
 
+// GetBalanceWebhook обработчик получения баланса, GET HTTP-запрос
 func GetBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -48,6 +49,7 @@ func GetBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 	_, _ = writer.Write(buf.Bytes())
 }
 
+// PostWithdrawBalanceWebhook обработчик списания баланса, POST HTTP-запрос
 func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -63,7 +65,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 	}
 
 	decoder := json.NewDecoder(request.Body)
-	var body handlermodels.WithdrawResponse
+	var body handlermodels.WithdrawRequest
 	if err := decoder.Decode(&body); err != nil {
 		logger.Log.Info(fmt.Sprintf("Decode body error: %s", err))
 		writer.WriteHeader(http.StatusBadRequest)

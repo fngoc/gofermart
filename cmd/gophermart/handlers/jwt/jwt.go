@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-// Claims — структура утверждений, которая включает стандартные утверждения и
+// Claims структура утверждений, которая включает стандартные утверждения и
 // одно пользовательское UserName
 type Claims struct {
 	jwt.RegisteredClaims
 	UserName string
 }
 
-// tokenExp жизнь токена
-// secretKey секрет
 const (
-	tokenExp  = time.Hour * 3
+	// tokenExp жизнь токена
+	tokenExp = time.Hour * 3
+	// secretKey секрет
 	secretKey = "super-secret-key"
 )
 
@@ -42,6 +42,7 @@ func BuildJWTByUserName(userName string) (string, error) {
 	return tokenString, nil
 }
 
+// GetUserNameByToken получить имя пользователя из токена
 func GetUserNameByToken(tokenString string) (string, error) {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,

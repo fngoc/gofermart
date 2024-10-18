@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// ConvertTime конвертор времени в нужный формат
 func ConvertTime(t string) string {
 	parsedTime, err := time.Parse(time.RFC3339Nano, t)
 	if err != nil {
