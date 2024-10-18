@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func ListWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
+func ListWithdrawalsBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusBadRequest)
 		logger.Log.Info("Method only accepts GET requests")
