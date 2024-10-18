@@ -202,12 +202,13 @@ func CreateOrder(userID int, orderID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx,
+	res, err := store.ExecContext(ctx,
 		`INSERT INTO orders (user_id, order_id, status) VALUES ($1, $2, $3)`,
 		userID, orderID, constants.New)
 	if err != nil {
 		return err
 	}
+	fmt.Println("I AM HERE u, o and s, res", userID, orderID, constants.New, res)
 	return nil
 }
 
