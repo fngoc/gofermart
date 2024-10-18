@@ -30,7 +30,7 @@ func Run() error {
 		r.Post("/balance/withdraw", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.PostWithdrawBalanceWebhook))))
 
 		//withdrawals
-		r.Get("/withdraw", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.ListWithdrawBalanceWebhook))))
+		r.Get("/withdraws", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.ListWithdrawBalanceWebhook))))
 	})
 
 	// Запускаем горутину для опроса стороннего сервиса

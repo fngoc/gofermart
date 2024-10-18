@@ -304,22 +304,6 @@ func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 	return result, nil
 }
 
-func IsUserHasOrderID(userID, orderID int) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	var isExist bool
-	row := store.QueryRowContext(ctx,
-		`SELECT EXISTS (SELECT 1 FROM orders 
-                WHERE order_id = $1 AND user_id = $2)`, orderID, userID)
-	err := row.Scan(&isExist)
-	if err != nil {
-		logger.Log.Error(err.Error())
-		return false
-	}
-	return isExist
-}
-
 func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
