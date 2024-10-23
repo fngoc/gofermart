@@ -19,7 +19,7 @@ type mockStorage struct {
 }
 
 func (m *mockStorage) IsUserCreated(userName string) bool {
-	return m.IsUserCreated(userName)
+	return m.IsUserCreatedFunc(userName)
 }
 
 func (m *mockStorage) IsUserAuthenticated(userName, passwordHash string) bool {

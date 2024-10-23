@@ -426,8 +426,10 @@ func TestDeductBalance(t *testing.T) {
 	mock.ExpectCommit()
 
 	newBalance, err := Store.DeductBalance(1, 123, 100.0)
+	assert.NoError(t, err)
 
 	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
 
 	// Тест 2: ошибка при начале транзакции
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("transaction begin error"))
