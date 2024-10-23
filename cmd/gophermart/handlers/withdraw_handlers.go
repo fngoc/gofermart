@@ -18,15 +18,20 @@ func ListWithdrawalsBalanceWebhook(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIDByName(userNameByToken)
+	userNameFromToken, ok := request.Context().Value(constants.UserNameKey).(string)
+	if !ok {
+		logger.Log.Warn("Something went wrong with jwt token")
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, err := storage.Store.GetUserIDByName(userNameFromToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Transactions error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	transactions, err := storage.GetAllTransactionByUserID(userID)
+	transactions, err := storage.Store.GetAllTransactionByUserID(userID)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Transactions error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)

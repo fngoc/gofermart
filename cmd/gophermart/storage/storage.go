@@ -13,8 +13,28 @@ import (
 	"time"
 )
 
-// store инстанс БД
-var store *sql.DB
+// Storage интерфейс для работы с хранилищем данных
+type Storage interface {
+	IsUserCreated(userName string) bool
+	IsUserAuthenticated(userName, passwordHash string) bool
+	CreateUser(userName, passwordHash, token string) error
+	SetNewTokenByUser(userName, token string) error
+	GetUserNameByOrderID(orderID int) string
+	CreateOrder(userID int, orderID int) error
+	GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error)
+	GetBalanceByUserID(userID int) (storagemodels.Balance, error)
+	GetUserIDByName(userName string) (int, error)
+	GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error)
+	DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
+	UpdateAccrualData(orderID int, accrual float64, status string) error
+}
+
+// SQLStorage реализация Storage на основе SQL базы данных
+type SQLStorage struct {
+	db *sql.DB
+}
+
+var Store Storage
 
 // InitializeDB инициализация базы данных
 func InitializeDB(dbConf string) error {
@@ -23,7 +43,7 @@ func InitializeDB(dbConf string) error {
 		return err
 	}
 
-	store = pqx
+	SetDbInstance(SQLStorage{db: pqx})
 
 	if err := createTables(pqx); err != nil {
 		return err
@@ -93,13 +113,17 @@ func createTables(db *sql.DB) error {
 	return nil
 }
 
+func SetDbInstance(sqlStorage Storage) {
+	Store = sqlStorage
+}
+
 // IsUserCreated проверка на существование пользователя
-func IsUserCreated(userName string) bool {
+func (s SQLStorage) IsUserCreated(userName string) bool {
 	var isCreated bool
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	row := store.QueryRowContext(ctx,
+	row := s.db.QueryRowContext(ctx,
 		`SELECT EXISTS (SELECT 1 FROM users 
                 WHERE user_name = $1)`, userName)
 	err := row.Scan(&isCreated)
@@ -111,12 +135,12 @@ func IsUserCreated(userName string) bool {
 }
 
 // IsUserAuthenticated проверка на авторизацию пользователя
-func IsUserAuthenticated(userName, passwordHash string) bool {
+func (s SQLStorage) IsUserAuthenticated(userName, passwordHash string) bool {
 	var IsAuthenticated bool
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	row := store.QueryRowContext(ctx,
+	row := s.db.QueryRowContext(ctx,
 		`SELECT EXISTS (SELECT 1 FROM users 
                 WHERE user_name = $1 AND password = $2)`, userName, passwordHash)
 	err := row.Scan(&IsAuthenticated)
@@ -127,11 +151,11 @@ func IsUserAuthenticated(userName, passwordHash string) bool {
 }
 
 // CreateUser создание пользователя
-func CreateUser(userName, passwordHash, token string) error {
+func (s SQLStorage) CreateUser(userName, passwordHash, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	tx, err := store.BeginTx(ctx, nil)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -160,23 +184,23 @@ func CreateUser(userName, passwordHash, token string) error {
 }
 
 // SetNewTokenByUser обновление токена авторизации
-func SetNewTokenByUser(userName, token string) error {
+func (s SQLStorage) SetNewTokenByUser(userName, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx,
+	_, err := s.db.ExecContext(ctx,
 		`UPDATE users SET token = $1 
              	WHERE user_name = $2;`, token, userName)
 	return err
 }
 
 // GetUserNameByOrderID получение имени пользователя по orderID
-func GetUserNameByOrderID(orderID int) string {
+func (s SQLStorage) GetUserNameByOrderID(orderID int) string {
 	var userName string
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	row := store.QueryRowContext(ctx,
+	row := s.db.QueryRowContext(ctx,
 		`SELECT users.user_name FROM orders
     			JOIN users 
     			    ON orders.user_id = users.id
@@ -189,12 +213,12 @@ func GetUserNameByOrderID(orderID int) string {
 }
 
 // GetUserIDByName получение имени пользователя по userName
-func GetUserIDByName(userName string) (int, error) {
+func (s SQLStorage) GetUserIDByName(userName string) (int, error) {
 	var id int
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	row := store.QueryRowContext(ctx,
+	row := s.db.QueryRowContext(ctx,
 		`SELECT id FROM users
           		WHERE user_name = $1;`, userName)
 	err := row.Scan(&id)
@@ -205,11 +229,11 @@ func GetUserIDByName(userName string) (int, error) {
 }
 
 // CreateOrder создание заказа
-func CreateOrder(userID int, orderID int) error {
+func (s SQLStorage) CreateOrder(userID int, orderID int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := store.ExecContext(ctx,
+	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO orders (user_id, order_id, status) VALUES ($1, $2, $3)`,
 		userID, orderID, constants.New)
 	if err != nil {
@@ -219,11 +243,11 @@ func CreateOrder(userID int, orderID int) error {
 }
 
 // GetAllOrdersByUserID получение всех заказов по userID
-func GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error) {
+func (s SQLStorage) GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := store.QueryContext(ctx,
+	rows, err := s.db.QueryContext(ctx,
 		`SELECT order_id, status, accrual, created_at FROM orders
                 WHERE user_id = $1 ORDER BY created_at DESC`, userID)
 	if err != nil {
@@ -269,11 +293,11 @@ func GetAllOrdersByUserID(userID int) ([]storagemodels.Order, error) {
 }
 
 // GetBalanceByUserID получение баланса пользователя
-func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
+func (s SQLStorage) GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := store.QueryContext(ctx,
+	rows, err := s.db.QueryContext(ctx,
 		`SELECT current_balance, withdrawn FROM balances
                 WHERE user_id = $1`, userID)
 	if err != nil {
@@ -314,11 +338,11 @@ func GetBalanceByUserID(userID int) (storagemodels.Balance, error) {
 }
 
 // DeductBalance вычет баланса пользователя
-func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
+func (s SQLStorage) DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	tx, err := store.BeginTx(ctx, nil)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -350,11 +374,11 @@ func DeductBalance(userID, orderID int, amountToDeduct float64) (float64, error)
 }
 
 // GetAllTransactionByUserID получение истории операций пользователя
-func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) {
+func (s SQLStorage) GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := store.QueryContext(ctx,
+	rows, err := s.db.QueryContext(ctx,
 		`SELECT order_number, transaction_sum, processed_at FROM transaction_history
                 WHERE user_id = $1 ORDER BY processed_at DESC`, userID)
 	if err != nil {
@@ -390,11 +414,11 @@ func GetAllTransactionByUserID(userID int) ([]storagemodels.Transaction, error) 
 }
 
 // UpdateAccrualData обновление заказа
-func UpdateAccrualData(orderID int, accrual float64, status string) error {
+func (s SQLStorage) UpdateAccrualData(orderID int, accrual float64, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	tx, err := store.BeginTx(ctx, nil)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}

@@ -22,15 +22,20 @@ func GetBalanceWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIDByName(userNameByToken)
+	userNameFromToken, ok := request.Context().Value(constants.UserNameKey).(string)
+	if !ok {
+		logger.Log.Warn("Something went wrong with jwt token")
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, err := storage.Store.GetUserIDByName(userNameFromToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Balance error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	balance, err := storage.GetBalanceByUserID(userID)
+	balance, err := storage.Store.GetBalanceByUserID(userID)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Balance error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -79,8 +84,13 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIDByName(userNameByToken)
+	userNameFromToken, ok := request.Context().Value(constants.UserNameKey).(string)
+	if !ok {
+		logger.Log.Warn("Something went wrong with jwt token")
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, err := storage.Store.GetUserIDByName(userNameFromToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Balance withdraw error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -93,7 +103,7 @@ func PostWithdrawBalanceWebhook(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	_, err = storage.DeductBalance(userID, orderID, body.Sum)
+	_, err = storage.Store.DeductBalance(userID, orderID, body.Sum)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Deduct balance error: %s", err))
 		writer.WriteHeader(http.StatusPaymentRequired)

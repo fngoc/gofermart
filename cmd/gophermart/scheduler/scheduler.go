@@ -3,6 +3,7 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"log"
@@ -19,14 +20,39 @@ type AccrualOrderResponse struct {
 	Accrual float64 `json:"accrual,omitempty"`
 }
 
-// OrdersForCheck структура для хранения состояния заказов
-var OrdersForCheck = map[int]string{}
+// OrderManager структура менеджера заказов
+type OrderManager struct {
+	// ordersForCheck структура для хранения состояния заказов
+	ordersForCheck map[int]string
+	// mutex для безопасного доступа к данным заказов
+	mutex sync.RWMutex
+	// orderStatusChan канал для передачи обновленных данных заказа
+	orderStatusChan chan AccrualOrderResponse
+}
 
-// mutex для безопасного доступа к данным заказов
-var mutex sync.Mutex
+// orderManagerInstant инстанс менеджера заказов
+var orderManagerInstant *OrderManager
 
-// orderStatusChan канал для передачи обновленных данных заказа
-var orderStatusChan = make(chan AccrualOrderResponse)
+// init инициализация инстанса менеджера заказов
+func init() {
+	orderManagerInstant = NewOrderManager()
+}
+
+// NewOrderManager конструктор менеджера заказов
+func NewOrderManager() *OrderManager {
+	return &OrderManager{
+		ordersForCheck:  make(map[int]string),
+		mutex:           sync.RWMutex{},
+		orderStatusChan: make(chan AccrualOrderResponse),
+	}
+}
+
+// AddOrderInQueue добавление заказа в очередь на обновление
+func AddOrderInQueue(orderID int) {
+	orderManagerInstant.mutex.Lock()
+	orderManagerInstant.ordersForCheck[orderID] = constants.New
+	orderManagerInstant.mutex.Unlock()
+}
 
 // requestOrderStatus функция для запроса статуса заказа у стороннего сервиса
 func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
@@ -48,7 +74,7 @@ func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
 			return timeOut
 		}
 		// Отправляем обновлённые данные в канал
-		orderStatusChan <- orderResponse
+		orderManagerInstant.orderStatusChan <- orderResponse
 		return timeOut
 	case http.StatusNoContent:
 		logger.Log.Info(fmt.Sprintf("Order %d is not registered in the billing system", orderID))
@@ -76,16 +102,16 @@ func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
 func FetchOrderStatuses(accrualAddress string) {
 	for {
 		// Проходим по всем заказам
-		mutex.Lock()
+		orderManagerInstant.mutex.RLock()
 		var timeOut time.Duration
-		for orderID, status := range OrdersForCheck {
-			if status == "PROCESSED" || status == "INVALID" {
-				delete(OrdersForCheck, orderID)
+		for orderID, status := range orderManagerInstant.ordersForCheck {
+			if status == constants.Processed || status == constants.Invalid {
+				delete(orderManagerInstant.ordersForCheck, orderID)
 				continue // Пропускаем заказы с финальными статусами
 			}
 			timeOut = requestOrderStatus(orderID, accrualAddress) // Для каждого заказа запускаем запрос
 		}
-		mutex.Unlock()
+		orderManagerInstant.mutex.RUnlock()
 
 		time.Sleep(timeOut) // Интервал опроса сервиса
 	}
@@ -93,19 +119,20 @@ func FetchOrderStatuses(accrualAddress string) {
 
 // UpdateOrderStatuses горутина для обновления статусов заказов
 func UpdateOrderStatuses() {
+	defer close(orderManagerInstant.orderStatusChan)
 	for {
-		for updatedOrder := range orderStatusChan {
-			mutex.Lock()
+		for updatedOrder := range orderManagerInstant.orderStatusChan {
+			orderManagerInstant.mutex.Lock()
 			orderID, err := strconv.Atoi(updatedOrder.Order)
 			if err == nil {
-				err := storage.UpdateAccrualData(orderID, updatedOrder.Accrual, updatedOrder.Status)
+				err := storage.Store.UpdateAccrualData(orderID, updatedOrder.Accrual, updatedOrder.Status)
 				if err != nil {
 					logger.Log.Error(fmt.Sprintf("Error updating order status %d, status %s: %s", orderID, updatedOrder.Status, err))
 					continue
 				}
 				logger.Log.Info(fmt.Sprintf("Order status updated %s: %s", updatedOrder.Order, updatedOrder.Status))
 			}
-			mutex.Unlock()
+			orderManagerInstant.mutex.Unlock()
 		}
 	}
 }

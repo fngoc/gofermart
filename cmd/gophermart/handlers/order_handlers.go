@@ -43,31 +43,36 @@ func LoadOrderWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userName := storage.GetUserNameByOrderID(orderID)
+	userNameFromToken, ok := request.Context().Value(constants.UserNameKey).(string)
+	if !ok {
+		logger.Log.Warn("Something went wrong with jwt token")
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userName := storage.Store.GetUserNameByOrderID(orderID)
 	if userName != "" {
-		if userName == userNameByToken {
+		if userName == userNameFromToken {
 			writer.WriteHeader(http.StatusOK)
 			return
-		} else if userName != userNameByToken {
+		} else if userName != userNameFromToken {
 			writer.WriteHeader(http.StatusConflict)
 			return
 		}
 	}
 
-	userID, err := storage.GetUserIDByName(userNameByToken)
+	userID, err := storage.Store.GetUserIDByName(userNameFromToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Create order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if err := storage.CreateOrder(userID, orderID); err != nil {
+	if err := storage.Store.CreateOrder(userID, orderID); err != nil {
 		logger.Log.Info(fmt.Sprintf("Create order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	scheduler.OrdersForCheck[orderID] = "NEW"
+	scheduler.AddOrderInQueue(orderID)
 	writer.WriteHeader(http.StatusAccepted)
 }
 
@@ -79,15 +84,20 @@ func ListOrdersWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	userNameByToken := request.Context().Value(constants.UserNameKey).(string)
-	userID, err := storage.GetUserIDByName(userNameByToken)
+	userNameFromToken, ok := request.Context().Value(constants.UserNameKey).(string)
+	if !ok {
+		logger.Log.Warn("Something went wrong with jwt token")
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, err := storage.Store.GetUserIDByName(userNameFromToken)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("List order error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	orders, err := storage.GetAllOrdersByUserID(userID)
+	orders, err := storage.Store.GetAllOrdersByUserID(userID)
 	if err != nil {
 		logger.Log.Info(fmt.Sprintf("Get all orders error: %s", err))
 		writer.WriteHeader(http.StatusInternalServerError)

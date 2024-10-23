@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	handler_models "github.com/fngoc/gofermart/cmd/gophermart/handlers/handlermodels"
+	"github.com/fngoc/gofermart/cmd/gophermart/handlers/handlermodels"
 	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
 	"github.com/fngoc/gofermart/cmd/gophermart/hash"
 	"github.com/fngoc/gofermart/cmd/gophermart/logger"
@@ -21,7 +21,7 @@ func RegisterWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if storage.IsUserCreated(body.Login) {
+	if storage.Store.IsUserCreated(body.Login) {
 		writer.WriteHeader(http.StatusConflict)
 		logger.Log.Info("User already exists")
 		return
@@ -40,7 +40,7 @@ func RegisterWebhook(writer http.ResponseWriter, request *http.Request) {
 		logger.Log.Warn(fmt.Sprintf("Registered user error: %s", err))
 		return
 	}
-	if err := storage.CreateUser(body.Login, passwordHash, jwtToken); err != nil {
+	if err := storage.Store.CreateUser(body.Login, passwordHash, jwtToken); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		logger.Log.Warn(fmt.Sprintf("Registered user error: %s", err))
 		return
@@ -67,7 +67,7 @@ func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if !storage.IsUserAuthenticated(body.Login, passwordHash) {
+	if !storage.Store.IsUserAuthenticated(body.Login, passwordHash) {
 		writer.WriteHeader(http.StatusUnauthorized)
 		logger.Log.Info("Bad username or password")
 		return
@@ -80,7 +80,7 @@ func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if err := storage.SetNewTokenByUser(body.Login, jwtToken); err != nil {
+	if err := storage.Store.SetNewTokenByUser(body.Login, jwtToken); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		logger.Log.Warn(fmt.Sprintf("Auntification user error: %s", err))
 		return
@@ -92,24 +92,24 @@ func AuntificationWebhook(writer http.ResponseWriter, request *http.Request) {
 }
 
 // authCheckRequest общие проверки для HTTP-запросов
-func authCheckRequest(request *http.Request) (handler_models.AuthRequest, error) {
+func authCheckRequest(request *http.Request) (handlermodels.AuthRequest, error) {
 	if request.Method != http.MethodPost {
-		return handler_models.AuthRequest{}, fmt.Errorf("method only accepts POST requests")
+		return handlermodels.AuthRequest{}, fmt.Errorf("method only accepts POST requests")
 	}
 
 	allowedApplicationJSON := strings.Contains(request.Header.Get("Content-Type"), "application/json")
 	if !allowedApplicationJSON {
-		return handler_models.AuthRequest{}, fmt.Errorf("need header: 'Content-Type: application/json'")
+		return handlermodels.AuthRequest{}, fmt.Errorf("need header: 'Content-Type: application/json'")
 	}
 
 	decoder := json.NewDecoder(request.Body)
-	var body handler_models.AuthRequest
+	var body handlermodels.AuthRequest
 	if err := decoder.Decode(&body); err != nil {
-		return handler_models.AuthRequest{}, fmt.Errorf("decode body error: %s", err)
+		return handlermodels.AuthRequest{}, fmt.Errorf("decode body error: %s", err)
 	}
 
 	if body.Login == "" || body.Password == "" {
-		return handler_models.AuthRequest{}, fmt.Errorf("empty login or password")
+		return handlermodels.AuthRequest{}, fmt.Errorf("empty login or password")
 	}
 
 	return body, nil
