@@ -24,7 +24,7 @@ func TestLoadOrderWebhook_Success(t *testing.T) {
 		},
 	}
 
-	storage.SetDbInstance(mockStore)
+	storage.SetDBInstance(mockStore)
 
 	orderID := 79927398713
 	requestBody, _ := json.Marshal(orderID)
@@ -48,7 +48,7 @@ func TestLoadOrderWebhook_Conflict(t *testing.T) {
 		},
 	}
 
-	storage.SetDbInstance(mockStore)
+	storage.SetDBInstance(mockStore)
 
 	orderID := 79927398713
 	requestBody, _ := json.Marshal(orderID)

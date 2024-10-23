@@ -28,7 +28,7 @@ func TestListWithdrawalsBalanceWebhook_Success(t *testing.T) {
 	}
 
 	// Подменяем хранилище в пакете storage
-	storage.SetDbInstance(mockStore)
+	storage.SetDBInstance(mockStore)
 
 	// Создаем запрос и ответ
 	req := httptest.NewRequest(http.MethodGet, "/withdrawals", nil)
@@ -67,7 +67,7 @@ func TestListWithdrawalsBalanceWebhook_NoTransactions(t *testing.T) {
 		},
 	}
 
-	storage.SetDbInstance(mockStore)
+	storage.SetDBInstance(mockStore)
 
 	req := httptest.NewRequest(http.MethodGet, "/withdrawals", nil)
 	ctx := context.WithValue(req.Context(), constants.UserNameKey, "test_user")
@@ -114,7 +114,7 @@ func TestListWithdrawalsBalanceWebhook_InternalServerError(t *testing.T) {
 		},
 	}
 
-	storage.SetDbInstance(mockStore)
+	storage.SetDBInstance(mockStore)
 
 	req := httptest.NewRequest(http.MethodGet, "/withdrawals", nil)
 	ctx := context.WithValue(req.Context(), constants.UserNameKey, "test_user")

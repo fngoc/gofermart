@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	_ "database/sql"
 	"fmt"
 	"github.com/fngoc/gofermart/cmd/gophermart/constants"
 	"github.com/fngoc/gofermart/cmd/gophermart/storage/storagemodels"
@@ -22,7 +21,7 @@ func TestIsUserCreated(t *testing.T) {
 	defer db.Close()
 
 	// устанавливаем глобальную переменную Store на замоканную базу
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	// создаем контекст с таймаутом
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -48,7 +47,7 @@ func TestIsUserAuthenticated(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -81,7 +80,7 @@ func TestCreateUser(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -159,7 +158,7 @@ func TestSetNewTokenByUser(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -194,7 +193,7 @@ func TestGetUserNameByOrderID(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -218,7 +217,7 @@ func TestGetUserIDByName(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -269,7 +268,7 @@ func TestCreateOrder(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -304,7 +303,7 @@ func TestGetAllOrdersByUserID(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	// Тест 1: успешное получение заказов
 	rows := sqlmock.NewRows([]string{"order_id", "status", "accrual", "created_at"}).
@@ -356,7 +355,7 @@ func TestGetBalanceByUserID(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	// Тест 1: успешное получение баланса пользователя
 	rows := sqlmock.NewRows([]string{"current_balance", "withdrawn"}).
@@ -407,7 +406,7 @@ func TestDeductBalance(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -484,7 +483,7 @@ func TestGetAllTransactionByUserID(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	// Тест 1: успешное получение истории транзакций пользователя
 	rows := sqlmock.NewRows([]string{"order_number", "transaction_sum", "processed_at"}).
@@ -516,7 +515,7 @@ func TestGetAllTransactionByUserID(t *testing.T) {
 	assert.Nil(t, transactions)
 	assert.Equal(t, sql.ErrConnDone, err)
 
-	// Тест 3: ошибка при обработке строк (rows.Err)
+	// Тест 3: ошибка при обработке строк
 	rowsWithError := sqlmock.NewRows([]string{"order_number", "transaction_sum", "processed_at"}).
 		AddRow("125", "300.50", "2023-10-20T10:00:00Z").
 		RowError(0, sql.ErrNoRows)
@@ -527,6 +526,7 @@ func TestGetAllTransactionByUserID(t *testing.T) {
 
 	transactions, err = Store.GetAllTransactionByUserID(1)
 	assert.Nil(t, transactions)
+	assert.Nil(t, err)
 
 	// Тест 4: ошибка при сканировании строки
 	rowsWithScanError := sqlmock.NewRows([]string{"order_number", "transaction_sum", "processed_at"}).
@@ -547,7 +547,7 @@ func TestUpdateAccrualData(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	SetDbInstance(SQLStorage{db: db})
+	SetDBInstance(SQLStorage{db: db})
 
 	// Тест 1: успешное обновление данных заказа и баланса
 	mock.ExpectBegin()
@@ -566,9 +566,9 @@ func TestUpdateAccrualData(t *testing.T) {
 
 	mock.ExpectCommit()
 
-	err = Store.UpdateAccrualData(123, 100.0, "PROCESSED")
+	Store.UpdateAccrualData(123, 100.0, "PROCESSED")
 
-	err = mock.ExpectationsWereMet()
+	mock.ExpectationsWereMet()
 
 	// Тест 2: ошибка при начале транзакции
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("transaction begin error"))

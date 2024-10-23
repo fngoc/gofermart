@@ -43,7 +43,7 @@ func InitializeDB(dbConf string) error {
 		return err
 	}
 
-	SetDbInstance(SQLStorage{db: pqx})
+	SetDBInstance(SQLStorage{db: pqx})
 
 	if err := createTables(pqx); err != nil {
 		return err
@@ -113,7 +113,7 @@ func createTables(db *sql.DB) error {
 	return nil
 }
 
-func SetDbInstance(sqlStorage Storage) {
+func SetDBInstance(sqlStorage Storage) {
 	Store = sqlStorage
 }
 
