@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ShiraazMoollatjie/goluhn"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/handlermodels"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/ShiraazMoollatjie/goluhn"
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/handlers/handlermodels"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/storage"
 )
 
 // GetBalanceWebhook обработчик получения баланса, GET HTTP-запрос

@@ -3,8 +3,9 @@ package configs
 import (
 	"flag"
 	"fmt"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"os"
+
+	"github.com/fngoc/gofermart/internal/logger"
 )
 
 // flags тип аргументы программы

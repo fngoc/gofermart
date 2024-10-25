@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage/storagemodels"
 	"testing"
 	"time"
+
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/storage/storagemodels"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"

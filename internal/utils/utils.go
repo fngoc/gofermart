@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"time"
+
+	"github.com/fngoc/gofermart/internal/logger"
 )
 
 // ConvertTime конвертор времени в нужный формат

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/fngoc/gofermart/cmd/gophermart/configs"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"github.com/fngoc/gofermart/cmd/gophermart/server"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
+	"github.com/fngoc/gofermart/internal/configs"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/storage"
 )
 
 // main старт программы

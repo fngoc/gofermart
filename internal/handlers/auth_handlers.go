@@ -3,13 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/handlermodels"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
-	"github.com/fngoc/gofermart/cmd/gophermart/hash"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"net/http"
 	"strings"
+
+	"github.com/fngoc/gofermart/internal/handlers/handlermodels"
+	"github.com/fngoc/gofermart/internal/handlers/jwt"
+	"github.com/fngoc/gofermart/internal/hash"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/storage"
 )
 
 // RegisterWebhook обработчик регистрации, POST HTTP-запрос

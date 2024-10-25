@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage/storagemodels"
-	"github.com/fngoc/gofermart/cmd/gophermart/utils"
+	"time"
+
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/storage/storagemodels"
+	"github.com/fngoc/gofermart/internal/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/shopspring/decimal"
-	"time"
 )
 
 // Storage интерфейс для работы с хранилищем данных

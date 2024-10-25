@@ -6,8 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/handlers/jwt"
+
 	"github.com/stretchr/testify/assert"
 )
 

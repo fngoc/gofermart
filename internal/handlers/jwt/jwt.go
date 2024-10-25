@@ -2,8 +2,9 @@ package jwt
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // Claims структура утверждений, которая включает стандартные утверждения и

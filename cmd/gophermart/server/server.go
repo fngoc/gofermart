@@ -1,13 +1,14 @@
 package server
 
 import (
-	"github.com/fngoc/gofermart/cmd/gophermart/configs"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/middlewares"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/scheduler"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	"github.com/fngoc/gofermart/internal/configs"
+	"github.com/fngoc/gofermart/internal/handlers"
+	"github.com/fngoc/gofermart/internal/handlers/middlewares"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/scheduler"
+	"github.com/go-chi/chi/v5"
 )
 
 // Run запуск сервера
@@ -33,6 +34,7 @@ func Run() error {
 		r.Get("/withdrawals", logger.RequestLogger(middlewares.AuthMiddleware(middlewares.GzipMiddleware(handlers.ListWithdrawalsBalanceWebhook))))
 	})
 
+	logger.Log.Info("Starting accrual checker")
 	go scheduler.FetchOrderStatuses(configs.Flags.AccrualAddress)
 	go scheduler.UpdateOrderStatuses()
 

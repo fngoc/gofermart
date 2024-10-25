@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/storage"
 )
 
 func TestLoadOrderWebhook_Success(t *testing.T) {

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage/storagemodels"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/storage"
+	"github.com/fngoc/gofermart/internal/storage/storagemodels"
 )
 
 func TestListWithdrawalsBalanceWebhook_Success(t *testing.T) {

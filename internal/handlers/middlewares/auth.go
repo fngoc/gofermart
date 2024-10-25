@@ -3,10 +3,11 @@ package middlewares
 import (
 	"context"
 	"fmt"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/handlers/jwt"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
 	"net/http"
+
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/handlers/jwt"
+	"github.com/fngoc/gofermart/internal/logger"
 )
 
 // AuthMiddleware middleware для аутентификации HTTP-запросов

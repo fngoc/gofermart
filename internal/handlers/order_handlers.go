@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ShiraazMoollatjie/goluhn"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/scheduler"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/ShiraazMoollatjie/goluhn"
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/scheduler"
+	"github.com/fngoc/gofermart/internal/storage"
 )
 
 // LoadOrderWebhook обработчик сохранения заказа, POST HTTP-запрос

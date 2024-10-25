@@ -3,11 +3,12 @@ package middlewares
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestGzipMiddleware тестирует работу GzipMiddleware для входящих и исходящих данных.

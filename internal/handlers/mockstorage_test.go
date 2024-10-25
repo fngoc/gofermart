@@ -1,6 +1,8 @@
 package handlers
 
-import "github.com/fngoc/gofermart/cmd/gophermart/storage/storagemodels"
+import (
+	"github.com/fngoc/gofermart/internal/storage/storagemodels"
+)
 
 // mockStorage имитация хранилища для тестов
 type mockStorage struct {

@@ -3,14 +3,15 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fngoc/gofermart/cmd/gophermart/constants"
-	"github.com/fngoc/gofermart/cmd/gophermart/logger"
-	"github.com/fngoc/gofermart/cmd/gophermart/storage"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/fngoc/gofermart/internal/constants"
+	"github.com/fngoc/gofermart/internal/logger"
+	"github.com/fngoc/gofermart/internal/storage"
 )
 
 // AccrualOrderResponse структура ответа
@@ -33,22 +34,24 @@ type OrderManager struct {
 // orderManagerInstant инстанс менеджера заказов
 var orderManagerInstant *OrderManager
 
-// init инициализация инстанса менеджера заказов
-func init() {
-	orderManagerInstant = NewOrderManager()
-}
+// once выполнится ровно один раз
+var once sync.Once
 
-// NewOrderManager конструктор менеджера заказов
-func NewOrderManager() *OrderManager {
-	return &OrderManager{
-		ordersForCheck:  make(map[int]string),
-		mutex:           sync.RWMutex{},
-		orderStatusChan: make(chan AccrualOrderResponse),
-	}
+// LazyInitialiseOrderManager ленивая инициализация orderManagerInstant,
+// в момент обращения к очереди, во время тестов или во время опроса сервиса accrual
+func LazyInitialiseOrderManager() {
+	once.Do(func() {
+		orderManagerInstant = &OrderManager{
+			ordersForCheck:  make(map[int]string),
+			mutex:           sync.RWMutex{},
+			orderStatusChan: make(chan AccrualOrderResponse),
+		}
+	})
 }
 
 // AddOrderInQueue добавление заказа в очередь на обновление
 func AddOrderInQueue(orderID int) {
+	LazyInitialiseOrderManager()
 	orderManagerInstant.mutex.Lock()
 	orderManagerInstant.ordersForCheck[orderID] = constants.New
 	orderManagerInstant.mutex.Unlock()
@@ -100,6 +103,7 @@ func requestOrderStatus(orderID int, accrualAddress string) time.Duration {
 
 // FetchOrderStatuses горутина для опроса стороннего сервиса
 func FetchOrderStatuses(accrualAddress string) {
+	LazyInitialiseOrderManager()
 	for {
 		// Проходим по всем заказам
 		orderManagerInstant.mutex.RLock()
@@ -119,6 +123,7 @@ func FetchOrderStatuses(accrualAddress string) {
 
 // UpdateOrderStatuses горутина для обновления статусов заказов
 func UpdateOrderStatuses() {
+	LazyInitialiseOrderManager()
 	defer close(orderManagerInstant.orderStatusChan)
 	for {
 		for updatedOrder := range orderManagerInstant.orderStatusChan {
